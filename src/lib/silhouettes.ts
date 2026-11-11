@@ -15,7 +15,7 @@ const cache = new Map<string, SilhouetteInfo | null>();
 
 export function getSilhouette(id: string): SilhouetteInfo | null {
   if (cache.has(id)) return cache.get(id)!;
-  const t = (traced as TracedFile)[id];
+  const t = (traced as unknown as TracedFile)[id];
   const info: SilhouetteInfo | null = t
     ? { outline: normalize(t.points), credit: t.credit, license: t.license, source: "phylopic" }
     : HANDMADE[id]

@@ -5,7 +5,6 @@ import type { Outline } from "../lib/shape";
  * har körts. Koordinater: x åt höger, y uppåt. Skalan normaliseras automatiskt.
  * Spårade PhyloPic-konturer i silhouettes.json har företräde.
  */
-const mirror = (half: Outline): Outline => [...half, ...half.slice(1, -1).reverse().map(([x, y]) => [1 - x, y] as [number, number])];
 
 export const HANDMADE: Record<string, Outline> = {
   mammoth: [
@@ -29,8 +28,4 @@ export const HANDMADE: Record<string, Outline> = {
     [0.95, 0.36], [0.98, 0.5], [1.0, 0.32], [0.97, 0.26], [0.86, 0.3], [0.72, 0.3], [0.72, 0], [0.62, 0],
     [0.62, 0.26], [0.38, 0.26], [0.36, 0], [0.28, 0], [0.28, 0.24], [0.15, 0.28], [0.05, 0.24], [0.0, 0.26],
   ].map(([x, y]) => [x * 2.2, y]) as Outline,
-  trilobite: mirror([
-    [0.5, 1.0], [0.72, 0.97], [0.88, 0.88], [0.96, 0.74], [0.98, 0.48], [0.86, 0.68], [0.8, 0.66], [0.84, 0.6],
-    [0.78, 0.56], [0.82, 0.5], [0.75, 0.46], [0.78, 0.4], [0.7, 0.36], [0.72, 0.3], [0.64, 0.24], [0.62, 0.14], [0.5, 0.0],
-  ]).map(([x, y]) => [x * 0.75, y]) as Outline,
 };
