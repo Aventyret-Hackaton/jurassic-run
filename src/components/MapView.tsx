@@ -9,6 +9,9 @@ const empty = { type: "FeatureCollection" as const, features: [] };
 
 const DRAW_MS = 3200; // hur länge neonrutten ritas fram
 const SPARKLE_LIFE = 750;
+const GHOST_FADE_MS = 1600; // hur länge djurets kontur tonar ut när rutten är klar
+const GHOST_FILL_OPACITY = 0.14;
+const GHOST_LINE_OPACITY = 0.5;
 const SPARKLE_COLORS = ["#ffffff", "#ffe45c", "#22e6ff", "#ff2fb3"];
 
 interface Props {
@@ -46,8 +49,8 @@ export function MapView({ center, route, runner, events, passedKm, onDrawn, bott
       const isRoad = ["==", ["get", "kind"], "road"] as maplibregl.FilterSpecification;
       const isTerrain = ["==", ["get", "kind"], "terrain"] as maplibregl.FilterSpecification;
       const round = { "line-join": "round", "line-cap": "round" } as const;
-      m.addLayer({ id: "ghost-fill", type: "fill", source: "ghost", paint: { "fill-color": "#9b2cf0", "fill-opacity": 0.14 } });
-      m.addLayer({ id: "ghost-line", type: "line", source: "ghost", paint: { "line-color": "#22e6ff", "line-opacity": 0.5, "line-width": 1.2, "line-dasharray": [2, 3] } });
+      m.addLayer({ id: "ghost-fill", type: "fill", source: "ghost", paint: { "fill-color": "#9b2cf0", "fill-opacity": GHOST_FILL_OPACITY } });
+      m.addLayer({ id: "ghost-line", type: "line", source: "ghost", paint: { "line-color": "#22e6ff", "line-opacity": GHOST_LINE_OPACITY, "line-width": 1.2, "line-dasharray": [2, 3] } });
       // Neon: bred suddig glöd, smalare färg, vit kärna.
       m.addLayer({ id: "route-glow", type: "line", source: "route", layout: round, paint: { "line-color": "#ff2fb3", "line-width": 18, "line-blur": 12, "line-opacity": 0.75 } });
       m.addLayer({ id: "route-road", type: "line", source: "route", filter: isRoad, layout: round, paint: { "line-color": "#ff4fc4", "line-width": 5 } });
@@ -99,12 +102,14 @@ export function MapView({ center, route, runner, events, passedKm, onDrawn, bott
       });
 
       set("ghost", { type: "Feature", properties: {}, geometry: { type: "Polygon", coordinates: [route.ghost] } });
+      showGhost(m, true, 0); // ny rutt: djuret syns direkt igen
 
       const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       const segs = withLengths(route.segments);
       const total = segs.reduce((s, x) => s + x.len, 0);
       if (reduced || total === 0) {
         set("route", partialRoute(segs, total).fc);
+        showGhost(m, false, 0);
         onDrawnRef.current?.();
         return;
       }
@@ -130,6 +135,8 @@ export function MapView({ center, route, runner, events, passedKm, onDrawn, bott
             const p = route.line[Math.floor(Math.random() * route.line.length)];
             sparkles.push(spark(m, p, now + Math.random() * 500, 6));
           }
+          // Djuret har gjort sitt – tona ut konturen så att bara springrundan ligger kvar.
+          showGhost(m, false, GHOST_FADE_MS);
           onDrawnRef.current?.();
         }
 
@@ -175,6 +182,15 @@ export function MapView({ center, route, runner, events, passedKm, onDrawn, bott
   }, [runner, route]);
 
   return <div ref={el} className="map" />;
+}
+
+/** Visa eller tona ut djurets kontur (spöket) med en mjuk övergång på `ms` millisekunder. */
+function showGhost(m: maplibregl.Map, visible: boolean, ms: number) {
+  const transition = { duration: ms, delay: 0 };
+  m.setPaintProperty("ghost-fill", "fill-opacity-transition", transition);
+  m.setPaintProperty("ghost-line", "line-opacity-transition", transition);
+  m.setPaintProperty("ghost-fill", "fill-opacity", visible ? GHOST_FILL_OPACITY : 0);
+  m.setPaintProperty("ghost-line", "line-opacity", visible ? GHOST_LINE_OPACITY : 0);
 }
 
 /** En gnista nära `at`, slumpat inom `spreadPx` pixlar. */
