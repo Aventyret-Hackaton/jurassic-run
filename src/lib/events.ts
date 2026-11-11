@@ -2,16 +2,29 @@
  * Trivia längs rutten från öppna API:er. Allt hämtas INNAN löpningen startar
  * och sorteras på distans (km), så att uppspelningen aldrig väntar på nätet.
  *
+ * Trivian ska passa temat: hårda Chuck Norris-saker eller utdöda djur och förhistoria.
+ *
  * Källor:
- *  - Wikidata (SPARQL): kända platser och byggnader nära rutten.
+ *  - Wikidata (SPARQL): platser i temakategorierna nära rutten (fängelser, befästningar,
+ *    fornlämningar, kyrkogårdar, djurparker …). Kategorierna finns i src/data/triviaClasses.json,
+ *    som skapas med `npm run trivia-classes`.
  *  - Wikidata (SPARQL): kända personer som ligger begravda nära rutten.
+ *  - Wikidata (SPARQL): kända personer som dog nära rutten.
  *  - USGS: historiska jordbävningar nära rutten.
  *
  * Lägg till fler källor i SOURCES. Varje källa är en funktion (line, ctx) => Promise<RouteEvent[]>.
  */
+import TRIVIA_CLASSES from "../data/triviaClasses.json";
 import { haversine, type LngLat } from "./shape";
 
-export type EventType = "quake" | "grave" | "place" | "fossil" | "stat" | "country";
+/** Platskategorier (från triviaClasses.json) och personhändelser. */
+export type PlaceCategory = "crime" | "war" | "prehistoric" | "cemetery" | "beasts" | "disaster";
+export type EventType = PlaceCategory | "grave" | "death" | "quake";
+
+const CLASSES = TRIVIA_CLASSES as Record<string, PlaceCategory>;
+
+/** Extra poäng per kategori: det hårdaste och mest förhistoriska först. */
+const CATEGORY_BONUS: Record<PlaceCategory, number> = { crime: 30, prehistoric: 25, disaster: 25, beasts: 20, war: 15, cemetery: 5 };
 
 export interface RouteEvent {
   km: number;
@@ -28,9 +41,9 @@ export interface RouteEvent {
 }
 
 /** Max avstånd från rutten per källa, i meter. */
-export const MAX_DIST_M: Record<"place" | "grave" | "quake", number> = { place: 120, grave: 150, quake: 1000 };
+export const MAX_DIST_M: Record<"place" | "grave" | "death" | "quake", number> = { place: 120, grave: 150, death: 150, quake: 1000 };
 /** Max antal trivia per runda, och minsta avstånd mellan dem längs rutten. */
-export const MAX_EVENTS = 8;
+export const MAX_EVENTS = 10;
 export const MIN_GAP_KM = 0.8;
 
 interface Ctx { cumKm: number[] }
@@ -68,7 +81,12 @@ function bboxOf(line: LngLat[], padM: number) {
 const WDQS = "https://query.wikidata.org/sparql";
 
 async function sparql(query: string): Promise<Record<string, { value: string }>[]> {
-  const res = await fetch(`${WDQS}?query=${encodeURIComponent(query)}`, { headers: { Accept: "application/sparql-results+json" } });
+  // POST, eftersom frågan med alla temaklasser är för lång för en URL.
+  const res = await fetch(WDQS, {
+    method: "POST",
+    headers: { Accept: "application/sparql-results+json", "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ query }),
+  });
   if (!res.ok) throw new Error(`Wikidata svarade ${res.status}`);
   return (await res.json()).results.bindings;
 }
@@ -91,22 +109,20 @@ function parsePoint(wkt: string): LngLat | null {
 /** Artikeltitel ur en Wikipedia-URL. */
 const articleTitle = (url?: string) => (url ? decodeURIComponent(url.split("/wiki/")[1] ?? "") || undefined : undefined);
 
-/** Beskrivningar som ger tråkig trivia: gator, stadsdelar, områden och liknande. */
-const BORING = /\b(gata|gatan|väg|vägen|stadsdel|stadsdelsområde|primärområde|område|kommun|tätort|kvarter|hållplats|busshållplats|street|road|avenue|neighbo(u)?rhood|district|borough|bus stop|census|human settlement)\b/i;
-
-/** Kända platser och byggnader nära rutten. */
+/** Platser i temakategorierna nära rutten. Klassas på sin direkta "instans av" (P31). */
 const places: Source = async (line, ctx) => {
+  // FILTER IN, inte VALUES: med VALUES börjar Wikidata med alla platser i världen och tar över 60 s.
+  const types = Object.keys(CLASSES).map((q) => `wd:${q}`).join(",");
   const rows = await sparql(`
-    SELECT ?item ?itemLabel ?itemDescription ?coord ?sl ?sv ?en WHERE {
+    SELECT ?item ?itemLabel ?itemDescription ?coord ?sl ?type ?sv ?en WHERE {
       {
-        SELECT ?item (SAMPLE(?c) AS ?coord) (MAX(?s) AS ?sl) WHERE {
+        SELECT ?item (SAMPLE(?c) AS ?coord) (MAX(?s) AS ?sl) (SAMPLE(?t) AS ?type) WHERE {
           ${boxService(line, MAX_DIST_M.place, "?item", "?c")}
           ?item wikibase:sitelinks ?s .
-          FILTER(?s >= 2)
-          FILTER NOT EXISTS { ?item wdt:P1082 [] }
-          FILTER NOT EXISTS { ?item wdt:P585 [] }
-          FILTER NOT EXISTS { ?item wdt:P403 [] }
-        } GROUP BY ?item ORDER BY DESC(?sl) LIMIT 1000
+          FILTER(?s >= 1)
+          ?item wdt:P31 ?t .
+          FILTER(?t IN (${types}))
+        } GROUP BY ?item ORDER BY DESC(?sl) LIMIT 400
       }
       OPTIONAL { ?sv schema:about ?item ; schema:isPartOf <https://sv.wikipedia.org/> . }
       OPTIONAL { ?en schema:about ?item ; schema:isPartOf <https://en.wikipedia.org/> . }
@@ -114,14 +130,14 @@ const places: Source = async (line, ctx) => {
     }`);
   return rows.flatMap((r) => {
     const at = parsePoint(r.coord.value);
-    const desc = r.itemDescription?.value ?? "";
+    const category = CLASSES[r.type.value.split("/").pop() ?? ""];
     const title = r.itemLabel.value;
-    if (!at || /^Q\d+$/.test(title) || BORING.test(desc)) return [];
+    if (!at || !category || /^Q\d+$/.test(title)) return [];
     const near = nearestOnLine(line, ctx, at);
     if (near.distM > MAX_DIST_M.place) return [];
     return [{
-      ...near, at, type: "place" as const, title, text: desc || "Känd plats längs rutten",
-      wiki: { sv: articleTitle(r.sv?.value), en: articleTitle(r.en?.value) }, rank: +r.sl.value,
+      ...near, at, type: category, title, text: r.itemDescription?.value ?? "",
+      wiki: { sv: articleTitle(r.sv?.value), en: articleTitle(r.en?.value) }, rank: +r.sl.value + CATEGORY_BONUS[category],
     }];
   });
 };
@@ -162,6 +178,42 @@ const graves: Source = async (line, ctx) => {
   });
 };
 
+/** Kända personer som dog nära rutten (sjukhus, fängelser, olycksplatser …). */
+const deaths: Source = async (line, ctx) => {
+  const rows = await sparql(`
+    SELECT ?place ?placeLabel ?coord ?person ?personLabel ?personDescription ?died ?mannerLabel ?sl ?sv ?en WHERE {
+      {
+        SELECT ?place (SAMPLE(?c) AS ?coord) ?person (MAX(?s) AS ?sl) WHERE {
+          ${boxService(line, MAX_DIST_M.death, "?place", "?c")}
+          FILTER NOT EXISTS { ?place wdt:P1082 [] }
+          ?person wdt:P20 ?place ; wikibase:sitelinks ?s .
+          FILTER(?s >= 8)
+        } GROUP BY ?place ?person ORDER BY DESC(?sl) LIMIT 200
+      }
+      OPTIONAL { ?person wdt:P570 ?died . }
+      OPTIONAL { ?person wdt:P1196 ?manner . }
+      OPTIONAL { ?sv schema:about ?person ; schema:isPartOf <https://sv.wikipedia.org/> . }
+      OPTIONAL { ?en schema:about ?person ; schema:isPartOf <https://en.wikipedia.org/> . }
+      SERVICE wikibase:label { bd:serviceParam wikibase:language "sv,en". }
+    }`);
+  const seen = new Set<string>();
+  return rows.flatMap((r) => {
+    const at = parsePoint(r.coord.value);
+    const name = r.personLabel.value;
+    if (!at || seen.has(r.person.value) || /^Q\d+$/.test(name)) return [];
+    seen.add(r.person.value);
+    const near = nearestOnLine(line, ctx, at);
+    if (near.distM > MAX_DIST_M.death) return [];
+    const year = r.died?.value?.slice(0, 4).replace(/^0+/, "");
+    const manner = r.mannerLabel?.value && !/^Q\d+$/.test(r.mannerLabel.value) ? ` Dödsorsak: ${r.mannerLabel.value}.` : "";
+    return [{
+      ...near, at, type: "death" as const, title: `Här dog ${name}`,
+      text: `${r.personDescription?.value ?? ""}${year ? ` (${year})` : ""}. Dog vid ${r.placeLabel.value}.${manner}`,
+      wiki: { sv: articleTitle(r.sv?.value), en: articleTitle(r.en?.value) }, rank: +r.sl.value + 25,
+    }];
+  });
+};
+
 /* ------------------------------ USGS ------------------------------ */
 
 /** Historiska jordbävningar nära rutten (hela katalogen, största först). */
@@ -178,7 +230,7 @@ const earthquakes: Source = async (line, ctx) => {
   });
 };
 
-export const SOURCES: Record<string, Source> = { places, graves, earthquakes };
+export const SOURCES: Record<string, Source> = { places, graves, deaths, earthquakes };
 
 /** De mest kända först, med minst MIN_GAP_KM mellan varje, sorterade längs rutten. */
 export function pickEvents(all: RouteEvent[], max = MAX_EVENTS, gapKm = MIN_GAP_KM): RouteEvent[] {

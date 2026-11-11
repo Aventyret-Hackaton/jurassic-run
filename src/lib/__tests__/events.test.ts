@@ -23,7 +23,7 @@ describe("nearestOnLine", () => {
 });
 
 describe("pickEvents", () => {
-  const ev = (km: number, rank: number): RouteEvent => ({ km, rank, type: "place", title: `${km}`, text: "", at: [0, 0], distM: 0 });
+  const ev = (km: number, rank: number): RouteEvent => ({ km, rank, type: "war", title: `${km}`, text: "", at: [0, 0], distM: 0 });
 
   it("väljer de mest kända, med minsta avstånd mellan dem, i ordning längs rutten", () => {
     const picked = pickEvents([ev(1, 5), ev(1.2, 50), ev(3, 10), ev(5, 1)], 2, 0.8);
