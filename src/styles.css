@@ -395,11 +395,14 @@ input[type="range"] { width: 100%; accent-color: var(--magenta); }
 .intro-dust span {
   position: absolute; bottom: 0; width: 46px; height: 46px; border-radius: 50%;
   background: radial-gradient(circle, rgba(255, 210, 240, .7), rgba(255, 47, 179, .25) 55%, transparent 70%);
-  opacity: 0; animation: dust .9s 1.35s ease-out both;
+  /* Dammet startar när ride-in är klar (0,25 s + 1,35 s = 1,6 s), 0,05 s mellan molnen.
+     forwards, inte both: annars syns första nyckelbilden (opacitet .9) under hela väntan. */
+  --dust-start: 1.6s;
+  opacity: 0; animation: dust .9s calc(var(--dust-start) + var(--i, 0) * .05s) ease-out forwards;
 }
-.intro-dust span:nth-child(1) { left: -10%; --dx: -70px; } .intro-dust span:nth-child(2) { left: 10%; --dx: -40px; animation-delay: 1.4s; }
-.intro-dust span:nth-child(3) { left: 35%; --dx: -10px; animation-delay: 1.45s; } .intro-dust span:nth-child(4) { left: 55%; --dx: 30px; animation-delay: 1.5s; }
-.intro-dust span:nth-child(5) { left: 75%; --dx: 60px; animation-delay: 1.55s; }
+.intro-dust span:nth-child(1) { left: -10%; --dx: -70px; --i: 0; } .intro-dust span:nth-child(2) { left: 10%; --dx: -40px; --i: 1; }
+.intro-dust span:nth-child(3) { left: 35%; --dx: -10px; --i: 2; } .intro-dust span:nth-child(4) { left: 55%; --dx: 30px; --i: 3; }
+.intro-dust span:nth-child(5) { left: 75%; --dx: 60px; --i: 4; }
 
 @keyframes ride-in {
   0% { transform: translateX(-115vw) rotate(-3deg); }
