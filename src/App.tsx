@@ -31,6 +31,8 @@ interface Stop { key: string; kind: "trivia" | "pep"; i: number; km: number }
 /** Städerna i fråga 1 (Stockholm finns kvar i CITIES för ?city=stockholm). */
 const WIZARD_CITIES = CITIES.filter((c) => c.name !== "Stockholm");
 const HERE_LABEL = "Där du är";
+/** Spellista att springa till. Sätt VITE_SPOTIFY_PLAYLIST_URL i .env.local för en egen lista. */
+const SPOTIFY_URL = import.meta.env.VITE_SPOTIFY_PLAYLIST_URL || "https://open.spotify.com/search/extinct%20animals/playlists";
 
 function initialPlace(): Place | null {
   const q = new URLSearchParams(location.search);
@@ -269,6 +271,11 @@ export default function App() {
 
           {route && shown && (
             <section className="sheet sheet--run">
+              <a className="spotify" href={SPOTIFY_URL} target="_blank" rel="noreferrer">
+                <span className="spotify-icon" aria-hidden>🎧</span>
+                <span><strong>Soundtrack: Utdöda hits</strong><small>Öppna spellistan i Spotify</small></span>
+                <span className="choice-arrow" aria-hidden>›</span>
+              </a>
               <div className="stats">
                 <div className="stat stat--accent"><span className="big">{Math.round(route.accuracy * 100)}%</span><span>Silhouette Accuracy</span></div>
                 <div className="stat"><span className="big">{(route.distance / 1000).toFixed(1)}</span><span>km</span></div>

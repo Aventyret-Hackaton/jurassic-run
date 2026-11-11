@@ -54,10 +54,12 @@ api/coach.ts           Claude-coach (valfri)
 src/data/animals.ts    De 17 djuren
 src/lib/generate.ts    Silhuett → rutt
 src/lib/events.ts      Trivia längs rutten (Wikidata SPARQL, USGS – lägg till fler här)
+src/data/triviaClasses.json  Temakategorier för trivia (skapas med npm run trivia-classes)
 src/lib/weather.ts     Väder i platsväljaren (Open-Meteo)
 src/lib/coach.ts       Coach Chuck
 src/App.tsx            UI
 scripts/fetch-silhouettes.mjs
+scripts/fetch-trivia-classes.mjs
 ```
 
 ## Deploy

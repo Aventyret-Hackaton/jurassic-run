@@ -3,12 +3,15 @@ import { wikiSummary, type RouteEvent } from "../lib/events";
 import { ChuckOnDodo } from "./ChuckOnDodo";
 
 const BADGE: Record<string, { icon: string; label: string }> = {
-  place: { icon: "🏛️", label: "Sevärdhet" },
+  crime: { icon: "⛓️", label: "Brott & straff" },
+  war: { icon: "⚔️", label: "Krigshistoria" },
+  prehistoric: { icon: "🦴", label: "Förhistoria" },
+  cemetery: { icon: "⚰️", label: "Dödens rike" },
+  beasts: { icon: "🦁", label: "Vilda djur" },
+  disaster: { icon: "🌊", label: "Katastrof" },
   grave: { icon: "🪦", label: "Kändisgrav" },
+  death: { icon: "💀", label: "Kändisdöd" },
   quake: { icon: "🌋", label: "Jordbävning" },
-  fossil: { icon: "🦴", label: "Fossil" },
-  stat: { icon: "📊", label: "Statistik" },
-  country: { icon: "🛂", label: "Gräns" },
 };
 
 interface Props {
@@ -19,44 +22,40 @@ interface Props {
   onContinue: () => void;
 }
 
-/** Helskärm när löparen når en trivia-punkt. Rundan står still tills man trycker "Fortsätt spring". */
+/**
+ * Helskärm när löparen når en trivia-punkt. Rundan står still tills man trycker
+ * "Fortsätt spring". Knappen ligger alltid på samma plats i botten.
+ */
 export function TriviaOverlay({ event, index, total, coachLine, onContinue }: Props) {
-  const [more, setMore] = useState<Awaited<ReturnType<typeof wikiSummary>>>(null);
-  const [loading, setLoading] = useState(!!event.wiki);
+  const [image, setImage] = useState<string | undefined>();
 
+  // Bara bilden från Wikipedia. Texten håller vi kort.
   useEffect(() => {
     let alive = true;
-    setMore(null);
-    setLoading(!!event.wiki);
-    wikiSummary(event.wiki).then((s) => { if (alive) { setMore(s); setLoading(false); } });
+    setImage(undefined);
+    wikiSummary(event.wiki).then((s) => { if (alive) setImage(s?.image); });
     return () => { alive = false; };
   }, [event]);
 
-  const badge = BADGE[event.type] ?? BADGE.place;
+  const badge = BADGE[event.type] ?? BADGE.war;
   return (
     <div className="trivia" role="dialog" aria-modal="true" aria-labelledby="trivia-title">
-      <div className="trivia-inner">
-        <div className="trivia-badge">
-          <span>{badge.icon} {badge.label}</span>
-          <span>km {event.km.toFixed(1)} · {index + 1}/{total}</span>
+      <div className="trivia-scroll">
+        <div className="trivia-inner">
+          <div className="trivia-badge">
+            <span>{badge.icon} {badge.label}</span>
+            <span>km {event.km.toFixed(1)} · {index + 1}/{total}</span>
+          </div>
+          {image && <img className="trivia-img" src={image} alt="" />}
+          <h2 id="trivia-title" className="trivia-title">{event.title}</h2>
+          {event.text && <p className="trivia-text">{event.text}</p>}
+          <div className="trivia-coach">
+            <ChuckOnDodo size={96} className="bob" />
+            <div className="speech speech--left"><p>{coachLine}</p></div>
+          </div>
         </div>
-
-        {more?.image && <img className="trivia-img" src={more.image} alt="" />}
-        <h2 id="trivia-title" className="trivia-title">{event.title}</h2>
-        <p className="trivia-text">{event.text}</p>
-        {loading && <p className="trivia-more trivia-more--loading">Chuck slår upp det i Wikipedia…</p>}
-        {more?.extract && <p className="trivia-more">{more.extract}</p>}
-        <small className="trivia-dist">
-          {Math.round(event.distM)} m från rutten
-          {event.wiki && " · Källa: Wikidata"}{more?.url && <> · <a href={more.url} target="_blank" rel="noreferrer">Wikipedia</a></>}
-          {event.type === "quake" && " · Källa: USGS"}
-        </small>
-
-        <div className="trivia-coach">
-          <ChuckOnDodo size={96} className="bob" />
-          <div className="speech speech--left"><p>{coachLine}</p></div>
-        </div>
-
+      </div>
+      <div className="trivia-footer">
         <button className="btn-neon" onClick={onContinue} autoFocus>Fortsätt spring ▶</button>
       </div>
     </div>

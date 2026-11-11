@@ -68,25 +68,33 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
 }
 .logo-arc { display: flex; align-items: flex-start; justify-content: center; gap: 1px; }
 .logo-chrome {
-  font-family: var(--font-block); font-size: clamp(40px, 12.5vw, 64px); line-height: 1; display: inline-block;
+  font-family: var(--font-block); font-size: clamp(40px, 12.5vw, 96px); line-height: 1; display: inline-block;
   background: linear-gradient(180deg, #0d2c74 0%, #3d8cf0 28%, #d6f0ff 47%, #ffffff 50%, #173f9e 53%, #4f9df5 72%, #e6f7ff 100%);
   -webkit-background-clip: text; background-clip: text; color: transparent;
   -webkit-text-stroke: 1.2px #eaf8ff;
   filter: drop-shadow(0 1px 0 #0b245c) drop-shadow(0 2px 0 #0a1f4d) drop-shadow(0 3px 0 #081a40) drop-shadow(0 0 10px rgba(120, 200, 255, .65));
 }
-.logo-run-wrap { position: relative; margin-top: -0.2em; font-size: clamp(56px, 18vw, 92px); width: 100%; display: flex; justify-content: center; }
+.logo-run-wrap { position: relative; margin-top: -0.2em; font-size: clamp(56px, 18vw, 130px); width: 100%; display: flex; justify-content: center; }
 .logo-run {
   font-family: var(--font-script); line-height: .9; color: var(--red); transform: rotate(-7deg); position: relative; z-index: 2;
   -webkit-text-stroke: 1px #ffd2dc;
   text-shadow: 0 0 6px var(--red), 0 0 18px rgba(255, 30, 70, .7), 0 3px 0 #6b0018;
 }
-.logo-bolt { position: absolute; left: -4%; right: -4%; width: 108%; top: .1em; height: .9em; z-index: 1; overflow: visible; }
-.logo-bolt polyline { fill: none; stroke: #ff4a68; stroke-width: 2.2; stroke-linejoin: round; stroke-dasharray: 600; stroke-dashoffset: 600; animation: bolt 1.4s .3s ease-out forwards, flicker 4s 2s infinite; }
+.logo-bolt { position: absolute; top: .1em; z-index: 1; overflow: visible; pointer-events: none; }
+.logo-bolt--l { right: calc(50% + .9em); }
+.logo-bolt--r { left: calc(50% + .9em); }
+.logo--compact .logo-bolt { display: none; }
+.logo-bolt polyline { fill: none; stroke-linejoin: round; stroke-linecap: round; animation: bolt 1.4s .3s ease-out forwards, flicker 4s 2s infinite; }
+.logo-bolt .bolt-halo { stroke: rgba(255, 42, 79, .18); stroke-width: calc(var(--core) * 7); }
+.logo-bolt .bolt-glow { stroke: rgba(255, 42, 79, .55); stroke-width: calc(var(--core) * 3); }
+.logo-bolt .bolt-core { stroke: #ffe1e7; stroke-width: var(--core); }
+.logo-bolt .bolt-fork { animation-delay: 1s, 3s; opacity: .8; }
+.intro .logo-bolt .bolt-fork { animation-delay: 2.6s, 4.5s; }
 @keyframes bolt { to { stroke-dashoffset: 0; } }
 @keyframes flicker { 0%, 92%, 100% { opacity: 1; } 94% { opacity: .3; } 96% { opacity: 1; } 97% { opacity: .5; } }
 .logo-spark { position: absolute; top: .12em; width: 10px; height: 10px; background: #fff; border-radius: 50%; box-shadow: 0 0 10px 4px #fff, 0 0 22px 8px var(--red); z-index: 3; }
 .logo-spark--l { left: 33%; } .logo-spark--r { right: 31%; top: .4em; }
-.logo-tag { font-size: 12px; letter-spacing: .3em; text-transform: uppercase; color: var(--cyan); text-shadow: 0 0 8px var(--cyan); margin-top: 8px; }
+.logo-tag { position: relative; z-index: 2; font-size: 12px; letter-spacing: .3em; text-transform: uppercase; color: var(--cyan); text-shadow: 0 0 4px var(--night), 0 0 8px var(--cyan); margin-top: 14px; }
 
 .logo--compact .logo-chrome { font-size: 22px; -webkit-text-stroke: .6px #eaf8ff; filter: drop-shadow(0 1px 0 #081a40) drop-shadow(0 0 6px rgba(120, 200, 255, .6)); }
 .logo--compact .logo-run-wrap { font-size: 30px; margin-top: -0.3em; }
@@ -132,8 +140,8 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
   content: ""; position: absolute; top: -14px; left: calc(50% - 30px); width: 18px; height: 18px; background: #fff;
   border-left: 3px solid var(--outline); border-top: 3px solid var(--outline); transform: skewX(-20deg) rotate(45deg);
 }
-.speech p { margin: 0; font-family: var(--font-block); font-size: 19px; line-height: 1.2; }
-.speech small { display: block; margin-top: 4px; color: #5b4a8a; font-weight: 600; }
+.speech p { position: relative; z-index: 1; margin: 0; font-family: var(--font-block); font-size: 19px; line-height: 1.2; }
+.speech small { position: relative; z-index: 1; display: block; margin-top: 4px; color: #5b4a8a; font-weight: 600; }
 @keyframes pop { from { transform: scale(.6); opacity: 0; } }
 
 .chuck { overflow: visible; }
@@ -271,7 +279,7 @@ input[type="range"] { width: 100%; accent-color: var(--magenta); }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
-  .logo-bolt polyline { stroke-dashoffset: 0; }
+  .logo-bolt polyline { stroke-dashoffset: 0 !important; }
 }
 
 /* ---------- Väder i platsväljaren ---------- */
@@ -280,19 +288,24 @@ input[type="range"] { width: 100%; accent-color: var(--magenta); }
 
 /* ---------- Trivia i helskärm ---------- */
 .trivia {
-  position: absolute; inset: 0; z-index: 20; overflow-y: auto;
-  padding: max(20px, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom));
+  position: absolute; inset: 0; z-index: 20; display: flex; flex-direction: column;
   background:
     radial-gradient(ellipse 80% 40% at 50% 0%, rgba(255, 47, 179, .35), transparent 70%),
     linear-gradient(180deg, rgba(7, 5, 26, .97), rgba(30, 9, 64, .98));
   animation: screen-in .3s ease-out;
 }
-.trivia-inner { max-width: 480px; min-height: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; justify-content: center; }
+.trivia-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: max(20px, env(safe-area-inset-top)) 16px 12px; }
+.trivia-inner { max-width: 480px; min-height: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; justify-content: safe center; }
+.trivia-footer {
+  flex: none; padding: 12px 16px max(16px, env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, transparent, rgba(7, 5, 26, .9) 30%);
+}
+.trivia-footer .btn-neon { display: block; max-width: 480px; margin: 0 auto; }
 .trivia-badge {
   display: flex; justify-content: space-between; font-family: var(--font-block); font-size: 13px; text-transform: uppercase;
   color: var(--cyan); text-shadow: 0 0 8px var(--cyan); letter-spacing: .04em;
 }
-.trivia-img { width: 100%; max-height: 32vh; object-fit: cover; border-radius: 16px; border: 3px solid var(--outline); box-shadow: 6px 6px 0 var(--magenta), 0 0 24px rgba(255, 47, 179, .4); }
+.trivia-img { width: 100%; max-height: 28vh; object-fit: cover; border-radius: 16px; border: 3px solid var(--outline); box-shadow: 6px 6px 0 var(--magenta), 0 0 24px rgba(255, 47, 179, .4); }
 .trivia-title {
   margin: 0; font-family: var(--font-block); font-weight: 400; font-size: clamp(26px, 8vw, 38px); line-height: 1.1;
   background: linear-gradient(180deg, var(--sun), var(--orange) 55%, var(--magenta)); -webkit-background-clip: text; background-clip: text; color: transparent;
@@ -300,10 +313,6 @@ input[type="range"] { width: 100%; accent-color: var(--magenta); }
   animation: pop .4s cubic-bezier(.3, 1.6, .5, 1);
 }
 .trivia-text { margin: 0; font-size: 18px; font-weight: 700; color: #fff; }
-.trivia-more { margin: 0; font-size: 15px; line-height: 1.45; color: #d9cff5; max-height: 30vh; overflow: auto; }
-.trivia-more--loading { color: var(--muted); font-style: italic; animation: flicker 1.2s infinite; }
-.trivia-dist { color: var(--muted); font-size: 12px; }
-.trivia-dist a { color: var(--cyan); }
 .trivia-coach { display: flex; align-items: center; gap: 4px; margin-top: 4px; }
 .trivia-coach .chuck { flex: none; }
 .speech--left { flex: 1; text-align: left; margin-top: 0; }
@@ -365,7 +374,7 @@ input[type="range"] { width: 100%; accent-color: var(--magenta); }
 .intro-logo, .intro-rider, .intro-cta { display: flex; flex-direction: column; align-items: center; gap: 12px; }
 .intro-rider { position: relative; }
 .intro-speech { position: absolute; top: -6px; right: 4px; width: auto; padding: 6px 12px; margin: 0; box-shadow: 3px 3px 0 var(--magenta); }
-.intro-speech::before { top: auto; bottom: -11px; left: 18px; transform: rotate(225deg) skewX(-10deg); }
+.intro-speech::before { top: auto; bottom: -9px; left: 20px; width: 14px; height: 14px; border: 0; border-right: 3px solid var(--outline); border-bottom: 3px solid var(--outline); transform: rotate(45deg); }
 .intro-speech p { font-size: 14px; }
 
 .running .chuck-leg { animation: run-leg .14s linear infinite alternate; }
@@ -416,3 +425,15 @@ input[type="range"] { width: 100%; accent-color: var(--magenta); }
 .pep-btn { animation: fade-up .4s .6s ease-out both; position: relative; z-index: 1; }
 @keyframes rise { from { transform: translateY(110%) rotate(6deg); } }
 @keyframes wiggle { 30% { transform: rotate(-5deg) scale(1.06); } 60% { transform: rotate(4deg) scale(1.06); } }
+
+/* ---------- Spotify-länk ---------- */
+.spotify {
+  display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 12px; text-decoration: none; color: #fff;
+  background: linear-gradient(90deg, rgba(30, 215, 96, .22), rgba(30, 215, 96, .06)); border: 1.5px solid #1ed760;
+  box-shadow: 0 0 12px rgba(30, 215, 96, .3);
+}
+.spotify-icon { font-size: 22px; }
+.spotify strong { display: block; font-family: var(--font-block); font-weight: 400; font-size: 13px; color: #1ed760; }
+.spotify small { display: block; font-size: 12px; color: var(--muted); }
+.spotify > span:nth-child(2) { flex: 1; }
+.spotify .choice-arrow { color: #1ed760; }
