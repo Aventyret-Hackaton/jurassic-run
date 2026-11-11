@@ -2,7 +2,7 @@
 
 *Run like there's no tomorrow!*
 
-Jurassic Run är en helt onödig löparapp (PWA) som genererar springrundor formade som utdöda djur. Välj ett av 20 utdöda djur, och appen ritar upp en rutt längs riktiga vägar i djurets silhuett, nära där du står. Hur väl rutten liknar djuret visas som **Silhouette Accuracy**.
+Jurassic Run är en helt onödig löparapp (PWA) som genererar springrundor formade som utdöda djur. Välj ett av 17 utdöda djur, och appen ritar upp en rutt längs riktiga vägar i djurets silhuett, nära där du står. Hur väl rutten liknar djuret visas som **Silhouette Accuracy**.
 
 Under den simulerade löpningen hämtas verklig data från öppna API:er om platserna du passerar: kungagravar, jordbävningar, extremväder, fossilfynd och märklig statistik. En Chuck Norris-inspirerad coach kommenterar allt, och rundan avslutas med en absurd slutrapport.
 
@@ -30,7 +30,7 @@ Appen funkar utan nycklar:
 
 ## Silhuetter
 
-Fem djur har handritade reservkonturer (mammut, dront, T. rex, stegosaurus, trilobit), så appen går att demo:a direkt. `npm run silhouettes` hämtar riktiga silhuetter för alla 20 från PhyloPic, spårar konturen och sparar den i `src/data/silhouettes.json`.
+Fyra djur har handritade reservkonturer (mammut, dront, T. rex, stegosaurus), så appen går att demo:a direkt. `npm run silhouettes` hämtar riktiga silhuetter för alla 17 från PhyloPic, spårar konturen och sparar den i `src/data/silhouettes.json`.
 
 - **Granska:** Titta på bilderna i `silhouettes/cache/`. Djuret ska helst vara sett från sidan.
 - **Byt bild:** Lägg en egen PNG (svart silhuett, transparent bakgrund) i `silhouettes/raw/<id>.png`, eller ange en PhyloPic-bilds UUID i `silhouettes/sources.json`. Kör sedan skriptet igen, t.ex. `npm run silhouettes -- dodo`.
@@ -51,7 +51,7 @@ Allt finns i `src/lib/generate.ts`:
 ```
 api/route.ts           Ruttning (ORS → OSRM-reserv), nyckeln stannar på servern
 api/coach.ts           Claude-coach (valfri)
-src/data/animals.ts    De 20 djuren
+src/data/animals.ts    De 17 djuren
 src/lib/generate.ts    Silhuett → rutt
 src/lib/events.ts      Händelser längs rutten (USGS, Open-Meteo – lägg till fler här)
 src/lib/coach.ts       Coach Chuck
