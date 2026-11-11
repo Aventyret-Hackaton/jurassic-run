@@ -230,8 +230,7 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
 .pick-head strong { display: block; font-family: var(--font-block); font-weight: 400; font-size: 18px; color: var(--sun); }
 .pick-head em { display: block; color: var(--muted); font-size: 13px; }
 .pick-meta { display: block; font-size: 13px; color: var(--cyan); margin-top: 2px; }
-.pick-fact { margin: 0; font-size: 13px; color: #d9cff5; max-height: 4.2em; overflow: auto; }
-.credit { color: var(--muted); font-size: 11px; }
+.pick-fact { margin: 0; font-size: 13px; color: #d9cff5; }
 .error { color: #ff8fa3; font-weight: 600; margin: 0; }
 
 /* ---------- Kartvyn ---------- */

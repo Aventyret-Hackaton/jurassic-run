@@ -47,7 +47,6 @@ export default function App() {
   const [place, setPlace] = useState<Place | null>(initialPlace);
   const [locating, setLocating] = useState(false);
   const [animal, setAnimal] = useState<Animal | null>(null);
-  const [fact, setFact] = useState("");
   const [phase, setPhase] = useState<Phase>("generating");
   const [log, setLog] = useState<string[]>([]);
   const [error, setError] = useState("");
@@ -64,16 +63,6 @@ export default function App() {
   const introPlayed = useRef(false);
   const [duration, setDuration] = useState(30);
   const runner = useRunner(phase === "ready" || phase === "done" ? route?.line ?? null : null, duration);
-
-  // Fakta från Wikipedia när ett djur väljs.
-  useEffect(() => {
-    if (!animal) return;
-    setFact("");
-    fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(animal.wiki)}`)
-      .then((r) => r.json())
-      .then((d) => setFact(d.extract ?? ""))
-      .catch(() => setFact(""));
-  }, [animal]);
 
   // Vädret för städerna i platsväljaren (en gång).
   useEffect(() => {
@@ -147,7 +136,6 @@ export default function App() {
   const lineFor = (e: RouteEvent) =>
     lines.reduce<CoachLine | null>((best, l) => (!best || Math.abs(l.km - e.km) < Math.abs(best.km - e.km) ? l : best), null)?.line ?? intro;
 
-  const sil = animal ? getSilhouette(animal.id) : null;
   const mapCenter: LngLat = place?.at ?? CITIES[0].at;
   const shown = step === "run" && (phase === "ready" || phase === "done");
 
@@ -242,8 +230,7 @@ export default function App() {
                   <span className="pick-meta">{animal.baseKm} km · utdöd {animal.extinct}</span>
                 </div>
               </div>
-              {fact && <p className="pick-fact">{fact}</p>}
-              {sil?.credit && <small className="credit">Silhuett: {sil.credit} ({sil.license})</small>}
+              <p className="pick-fact">{animal.fact}</p>
               {error && <p className="error">{error}</p>}
               <button className="btn-neon" onClick={generate}>Rita min runda</button>
             </div>
