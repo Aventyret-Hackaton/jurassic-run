@@ -1,0 +1,27 @@
+import { useState } from "react";
+import { ChuckOnDodo } from "./ChuckOnDodo";
+import { Logo } from "./Logo";
+
+/**
+ * Startskärmen. Första gången rider Chuck in på dronten i full fart,
+ * sladdar till stopp i ett dammoln, blixten slår ner och logotypen smäller in.
+ * Ett tryck var som helst hoppar över introt.
+ */
+export function StartIntro({ playIntro, onStart }: { playIntro: boolean; onStart: () => void }) {
+  const [intro, setIntro] = useState(playIntro);
+  return (
+    <main className={`screen screen--start ${intro ? "intro" : ""}`} onClick={() => setIntro(false)}>
+      {intro && <div className="intro-flash" aria-hidden />}
+      <div className="intro-logo"><Logo /></div>
+      <div className="intro-rider">
+        {intro && <div className="intro-dust" aria-hidden><span /><span /><span /><span /><span /></div>}
+        <ChuckOnDodo size={200} className={intro ? "running" : "bob"} />
+        <div className="speech intro-speech"><p>Redo, rekryt?</p></div>
+      </div>
+      <div className="intro-cta">
+        <button className="btn-neon btn-start" onClick={onStart}>Press start</button>
+        <p className="fineprint">En helt onödig löparapp. Rutterna formas som utdöda djur.</p>
+      </div>
+    </main>
+  );
+}

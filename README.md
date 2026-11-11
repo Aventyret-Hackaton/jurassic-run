@@ -53,7 +53,8 @@ api/route.ts           Ruttning (ORS → OSRM-reserv), nyckeln stannar på serve
 api/coach.ts           Claude-coach (valfri)
 src/data/animals.ts    De 17 djuren
 src/lib/generate.ts    Silhuett → rutt
-src/lib/events.ts      Händelser längs rutten (USGS, Open-Meteo – lägg till fler här)
+src/lib/events.ts      Trivia längs rutten (Wikidata SPARQL, USGS – lägg till fler här)
+src/lib/weather.ts     Väder i platsväljaren (Open-Meteo)
 src/lib/coach.ts       Coach Chuck
 src/App.tsx            UI
 scripts/fetch-silhouettes.mjs
@@ -65,6 +66,6 @@ Importera repot i Vercel (Framework: Vite). Lägg `ORS_API_KEY`, `ANTHROPIC_API_
 
 ## Att göra
 
-- **Person B:** fler händelsekällor i `src/lib/events.ts` (Wikidata-gravar, GBIF-fossil, World Bank, landsgränser) och achievements.
+- **Person B:** fler händelsekällor i `src/lib/events.ts` (GBIF-fossil, World Bank, landsgränser) och achievements.
 - **Person C:** design och coachbubblor, Chuck-figuren, slutrapporten.
 - **Person A:** finjustera auto-fit och terrängsträckor, och spara en New York-rutt som reserv för demon.

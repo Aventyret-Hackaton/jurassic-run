@@ -6,8 +6,8 @@ import type { RouteEvent } from "./events";
 
 const TEMPLATES: Record<string, string[]> = {
   quake: ["En jordbävning! Nej då, det var bara dina steg.", "Marken skakade här en gång. Den hade hört att Chuck var på väg."],
-  weather: ["Vädret? Chuck Norris bestämmer vädret. Spring.", "Temperaturen är irrelevant. Du är irrelevant. Spring."],
-  grave: ["En kung ligger begravd här. Han slutade springa.", "Vila i frid? Vila är för de svaga."],
+  place: ["Sevärdhet! Titta snabbt. Chuck har redan sett den. Två gånger.", "Turister stannar här. Du är ingen turist. Du är en maskin.", "Den här platsen är känd. Snart är du också det."],
+  grave: ["En legend vilar här. Legender vilar. Du springer.", "Vila i frid? Vila är för de svaga.", "Hen slutade springa. Gör inte samma misstag."],
   fossil: ["Fossil! Det där är vad som händer om du stannar.", "Någon här slutade träna för 100 miljoner år sedan."],
   stat: ["Statistiken säger att du borde springa fortare.", "Siffror ljuger inte. Det gör dina ben."],
   country: ["Ny gräns! Passet? Chuck Norris ÄR passet.", "Landsgräns passerad. Den passerade dig inte."],
@@ -18,11 +18,14 @@ export const START_LINES = [
   "Uppvärmning är för dinosaurier. Och de är utdöda.",
 ];
 
+const SAFE_JOKE_CATEGORIES = ["animal", "dev", "fashion", "food", "movie", "music", "science", "sport", "travel"];
+
 export interface CoachLine { km: number; line: string }
 
 export async function chuckFact(): Promise<string> {
   try {
-    const r = await fetch("https://api.chucknorris.io/jokes/random");
+    // Bara snälla kategorier (inte "explicit", "religion" eller "political").
+    const r = await fetch(`https://api.chucknorris.io/jokes/random?category=${pick(SAFE_JOKE_CATEGORIES)}`);
     return (await r.json()).value as string;
   } catch {
     return "Chuck Norris behöver inget internet. Internet behöver Chuck Norris.";
@@ -32,7 +35,7 @@ export async function chuckFact(): Promise<string> {
 const pick = <T,>(arr: T[]) => arr[Math.floor(Math.random() * arr.length)];
 
 export async function coachLines(animal: string, events: RouteEvent[]): Promise<{ lines: CoachLine[]; source: string }> {
-  const fallback = events.map((e) => ({ km: e.km, line: pick(TEMPLATES[e.type] ?? TEMPLATES.stat) }));
+  const fallback = events.map((e) => ({ km: e.km, line: pick(TEMPLATES[e.type] ?? TEMPLATES.place) }));
   try {
     const res = await fetch("/api/coach", {
       method: "POST",
