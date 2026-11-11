@@ -55,13 +55,13 @@ export default defineConfig(({ mode }) => {
           name: "Jurassic Run",
           short_name: "Jurassic Run",
           description: "Run like there's no tomorrow! Löprundor formade som utdöda djur.",
-          theme_color: "#14281d",
-          background_color: "#f6f1e7",
+          theme_color: "#07051a",
+          background_color: "#07051a",
           display: "standalone",
           icons: [{ src: "icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" }],
         },
         workbox: {
-          globPatterns: ["**/*.{js,css,html,svg}"],
+          globPatterns: ["**/*.{js,css,html,svg,woff2}"],
           maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
           runtimeCaching: [
             {
