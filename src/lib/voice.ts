@@ -6,14 +6,14 @@
 import { useEffect, useRef, useState } from "react";
 
 /**
- * Svensk taligenkänning stavar "Chuck" på många sätt ("tjack", "schack", "jack" …),
- * så vi godtar "tack" följt av något som låter som Chuck.
+ * Taligenkänningen hör sällan "Tack Chuck" rätt (ofta blir det "tack tack"), så vi är
+ * generösa: något av de här orden var som helst i det som sägs räcker för att gå vidare.
  */
-const THANKS_CHUCK = /\btack\s*(så\s+)?(chuck|chuk|chock|chack|tjack|tjuck|tjock|schack|shack|jack|jock|check|tschack)\b/;
+const GO_WORDS = /(^|\s)(tack|tackar|ok|okej|okey|okay|chuck|chuk|chock|chack|tjack|tjuck|schack|shack|jack|check)(?=\s|$)/;
 
 export function isThanksChuck(transcript: string): boolean {
-  const t = transcript.toLowerCase().replace(/[.,!?;:"'’]/g, " ").replace(/\s+/g, " ");
-  return THANKS_CHUCK.test(t);
+  const t = transcript.toLowerCase().replace(/[.,!?;:"'’]/g, " ").replace(/\s+/g, " ").trim();
+  return GO_WORDS.test(t);
 }
 
 // Minimal typning – Web Speech API finns inte i TypeScripts DOM-typer.
@@ -48,7 +48,8 @@ export function useThanksChuck(active: boolean, onThanks: () => void): boolean {
 
   useEffect(() => {
     const Ctor = recognitionCtor();
-    if (!active || !Ctor || micDenied) return;
+    // Kräver stöd i webbläsaren och https/localhost; mikrofonen frågas bara om en gång.
+    if (!active || !Ctor || !window.isSecureContext || micDenied) return;
 
     let stopped = false;
     let fired = false;
