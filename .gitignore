@@ -1,0 +1,7 @@
+node_modules
+dist
+.env
+.env.local
+.vercel
+silhouettes/cache
+.DS_Store
