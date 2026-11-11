@@ -46,7 +46,15 @@ export function TriviaOverlay({ event, index, total, coachLine, onContinue }: Pr
             <span>{badge.icon} {badge.label}</span>
             <span>km {event.km.toFixed(1)} · {index + 1}/{total}</span>
           </div>
-          {image && <img className="trivia-img" src={image} alt="" />}
+          {image && (
+            <img
+              className="trivia-img"
+              src={image}
+              alt=""
+              // Bildens proportioner (bredd/höjd) till CSS, så att den kan begränsas till 45vh utan att beskäras.
+              onLoad={(e) => { const i = e.currentTarget; i.style.setProperty("--ar", String(i.naturalWidth / i.naturalHeight)); }}
+            />
+          )}
           <h2 id="trivia-title" className="trivia-title">{event.title}</h2>
           {event.text && <p className="trivia-text">{event.text}</p>}
           <div className="trivia-coach">

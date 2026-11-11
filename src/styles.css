@@ -318,8 +318,9 @@ input[type="range"] { width: 100%; accent-color: var(--magenta); }
   display: flex; justify-content: space-between; font-family: var(--font-block); font-size: 13px; text-transform: uppercase;
   color: var(--cyan); text-shadow: 0 0 8px var(--cyan); letter-spacing: .04em;
 }
-/* Hela bilden syns: full bredd, höjden följer bildens proportioner (trivia-scroll scrollar vid behov). */
-.trivia-img { display: block; flex: none; width: 100%; height: auto; border-radius: 16px; border: 3px solid var(--outline); box-shadow: 6px 6px 0 var(--magenta), 0 0 24px rgba(255, 47, 179, .4); }
+/* Hela bilden syns: full bredd och proportionerlig höjd, men aldrig högre än 45vh.
+   Höga bilder blir smalare i stället (--ar = bredd/höjd sätts i TriviaOverlay), så ramen sluter tätt runt bilden. */
+.trivia-img { display: block; flex: none; align-self: center; width: min(100%, calc(45vh * var(--ar, 1.5))); height: auto; border-radius: 16px; border: 3px solid var(--outline); box-shadow: 6px 6px 0 var(--magenta), 0 0 24px rgba(255, 47, 179, .4); }
 .trivia-title {
   margin: 0; font-family: var(--font-block); font-weight: 400; font-size: clamp(26px, 8vw, 38px); line-height: 1.1;
   background: linear-gradient(180deg, var(--sun), var(--orange) 55%, var(--magenta)); -webkit-background-clip: text; background-clip: text; color: transparent;
