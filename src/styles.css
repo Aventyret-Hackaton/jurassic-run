@@ -425,6 +425,7 @@ input[type="range"] { width: 100%; accent-color: var(--magenta); }
 .pep-speech p { font-size: 19px; line-height: 1.25; }
 .pep-speech small { margin: 0 0 4px; text-transform: uppercase; letter-spacing: .08em; color: #c2126f; font-size: 11px; }
 .pep-btn { animation: fade-up .4s .6s ease-out both; position: relative; z-index: 1; }
+.pep-mic { margin-top: 8px; color: #d9cff5; font-size: 12px; animation: fade-up .4s .8s ease-out both; }
 @keyframes rise { from { transform: translateY(110%) rotate(6deg); } }
 @keyframes wiggle { 30% { transform: rotate(-5deg) scale(1.06); } 60% { transform: rotate(4deg) scale(1.06); } }
 
