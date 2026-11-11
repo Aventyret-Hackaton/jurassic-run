@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { ChuckOnDodo } from "./ChuckOnDodo";
 import { Logo } from "./Logo";
 
@@ -11,7 +12,9 @@ export function StartIntro({ playIntro, onStart }: { playIntro: boolean; onStart
   const [intro, setIntro] = useState(playIntro);
   return (
     <main className={`screen screen--start ${intro ? "intro" : ""}`} onClick={() => setIntro(false)}>
-      {intro && <div className="intro-flash" aria-hidden />}
+      {/* Portal till body: skak-animationens transform på <main> gör annars att
+          position: fixed räknas mot <main> i stället för hela fönstret. */}
+      {intro && createPortal(<div className="intro-flash" aria-hidden />, document.body)}
       <div className="intro-logo"><Logo /></div>
       <div className="intro-rider">
         {intro && <div className="intro-dust" aria-hidden><span /><span /><span /><span /><span /></div>}
