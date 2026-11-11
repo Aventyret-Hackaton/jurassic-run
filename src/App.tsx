@@ -163,7 +163,7 @@ export default function App() {
       {step === "where" && (
         <main className="screen" key="where">
           <TopBar step={1} onBack={() => setStep("start")} />
-          <Coach question="Var vill du springa, soldat?" />
+          <Coach question="Var vill du springa, soldat?" headshot />
           <div className="choices">
             <button className="choice choice--here" onClick={pickHere} disabled={locating}>
               <span className="choice-icon">📍</span>
@@ -329,10 +329,18 @@ function TopBar({ step, onBack }: { step: number; onBack: () => void }) {
   );
 }
 
-function Coach({ question, note }: { question: string; note?: string }) {
+function Coach({ question, note, headshot }: { question: string; note?: string; headshot?: boolean }) {
   return (
     <div className="coach-ask">
-      <ChuckOnDodo size={150} className="bob" />
+      {headshot ? (
+        // Närbild: bara Chucks huvud, och dronten tittar upp i hörnet.
+        <div className="coach-head">
+          <ChuckOnDodo crop="head" size={190} className="bob" />
+          <ChuckOnDodo crop="dodo" size={92} className="coach-head-dodo" />
+        </div>
+      ) : (
+        <ChuckOnDodo size={150} className="bob" />
+      )}
       <div className="speech">
         <p>{question}</p>
         {note && <small>{note}</small>}

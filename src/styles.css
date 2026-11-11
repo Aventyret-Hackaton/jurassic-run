@@ -155,6 +155,20 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
 @keyframes flap { to { transform: rotate(-9deg); } }
 @keyframes twinkle { 50% { transform: scale(.3); opacity: .4; } }
 
+/* Närbild på Chuck (fråga 1): bara huvudet, dronten tittar upp i nedre vänstra hörnet. */
+.chuck--crop { overflow: hidden; }
+.coach-head { position: relative; width: 280px; height: 140px; overflow: hidden; }
+.coach-head > .chuck:first-child { position: absolute; right: 0; bottom: 0; }
+.coach-head-dodo { position: absolute; left: 0; bottom: -64px; transform: rotate(10deg); animation: dodo-peek 4.5s ease-in-out .6s infinite; }
+@keyframes dodo-peek {
+  0%, 12% { transform: translateY(0) rotate(10deg); }       /* gömd */
+  24%, 70% { transform: translateY(-58px) rotate(10deg); }  /* tittar upp mot Chuck */
+  76% { transform: translateY(-58px) rotate(0deg); }        /* nyfiken tilt */
+  84% { transform: translateY(-58px) rotate(10deg); }
+  100% { transform: translateY(0) rotate(10deg); }
+}
+@media (prefers-reduced-motion: reduce) { .coach-head-dodo { animation: none; transform: translateY(-58px) rotate(10deg); } }
+
 /* ---------- Fråga 1: val ---------- */
 .choices { display: grid; gap: 10px; }
 .choice {

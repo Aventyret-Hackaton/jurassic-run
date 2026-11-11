@@ -4,15 +4,28 @@
  */
 const O = "#1a1033"; // konturfärg
 
-export function ChuckOnDodo({ size = 180, className = "" }: { size?: number; className?: string }) {
+/**
+ * Utsnitt av samma teckning: hela figuren, bara Chucks huvud, eller bara drontens huvud.
+ * [x, y, bredd, höjd] i SVG-koordinater.
+ */
+const CROPS = {
+  full: { box: [0, 0, 240, 230], label: "Coach Chuck rider på en dront" },
+  head: { box: [46, 6, 80, 58], label: "Coach Chuck" },
+  dodo: { box: [144, 62, 86, 62], label: "Dronten" },
+} as const;
+
+export type ChuckCrop = keyof typeof CROPS;
+
+export function ChuckOnDodo({ size = 180, className = "", crop = "full" }: { size?: number; className?: string; crop?: ChuckCrop }) {
+  const { box, label } = CROPS[crop];
   return (
     <svg
-      className={`chuck ${className}`}
+      className={`chuck ${crop !== "full" ? "chuck--crop" : ""} ${className}`}
       width={size}
-      height={size * (230 / 240)}
-      viewBox="0 0 240 230"
+      height={size * (box[3] / box[2])}
+      viewBox={box.join(" ")}
       role="img"
-      aria-label="Coach Chuck rider på en dront"
+      aria-label={label}
     >
       <g stroke={O} strokeWidth="3" strokeLinejoin="round" strokeLinecap="round">
         {/* ---------- Dronten ---------- */}
