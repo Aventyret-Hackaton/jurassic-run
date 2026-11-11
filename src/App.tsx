@@ -8,6 +8,7 @@ import { chuckFact, coachLines, START_LINES, type CoachLine } from "./lib/coach"
 import { fetchEvents, type RouteEvent } from "./lib/events";
 import { generateRoute, type GeneratedRoute, type Mode } from "./lib/generate";
 import type { LngLat } from "./lib/shape";
+import { getSilhouette } from "./lib/silhouettes";
 import { useRunner } from "./lib/useRunner";
 
 type Phase = "setup" | "generating" | "ready" | "done";
@@ -23,6 +24,7 @@ function initialLocation(): { at: LngLat; label: string } {
 export default function App() {
   const [loc, setLoc] = useState(initialLocation);
   const [animal, setAnimal] = useState<Animal | null>(null);
+  const [fact, setFact] = useState<string>("");
   const [mode, setMode] = useState<Mode>("foot");
   const [phase, setPhase] = useState<Phase>("setup");
   const [log, setLog] = useState<string[]>([]);
@@ -34,6 +36,16 @@ export default function App() {
   const [intro, setIntro] = useState(START_LINES[0]);
   const [duration, setDuration] = useState(30);
   const runner = useRunner(route?.line ?? null, duration);
+
+  // Fakta från Wikipedia när ett djur väljs.
+  useEffect(() => {
+    if (!animal) return;
+    setFact("");
+    fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(animal.wiki)}`)
+      .then((r) => r.json())
+      .then((d) => setFact(d.extract ?? ""))
+      .catch(() => setFact(""));
+  }, [animal]);
 
   useEffect(() => { if (runner.progress >= 1 && phase === "ready") setPhase("done"); }, [runner.progress, phase]);
 
@@ -107,7 +119,8 @@ export default function App() {
                 <div className="fact">
                   <strong>{animal.name}</strong> <em>{animal.scientific}</em>
                   <span className="extinct">Utdöd: {animal.extinct}</span>
-                  <p>{animal.fact}</p>
+                  {fact && <p>{fact}</p>}
+                  {getSilhouette(animal.id)?.credit && <small>Silhuett: {getSilhouette(animal.id)?.credit} ({getSilhouette(animal.id)?.license})</small>}
                 </div>
               )}
             </section>
