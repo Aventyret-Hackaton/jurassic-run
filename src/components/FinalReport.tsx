@@ -37,7 +37,7 @@ export function FinalReport({ route, animal, km, trivia, wisdom, onAgain, onNew 
         </div>
 
         <div className="report-grid">
-          <Tile big={`${accuracy}%`} label="Silhouette Accuracy" accent grade={grade(accuracy)} />
+          <Tile big={`${accuracy}%`} label="Silhuettprecision" accent grade={grade(accuracy)} />
           <Tile big={km.toFixed(1)} label="kilometer" />
           <Tile big={Math.round(km * 65).toLocaleString("sv-SE")} label="kcal brända" />
           <Tile big={String(trivia)} label="trivia upplevda" />

@@ -312,7 +312,7 @@ export default function App() {
                 <span className="choice-arrow" aria-hidden>›</span>
               </a>
               <div className="stats">
-                <div className="stat stat--accent"><span className="big">{Math.round(route.accuracy * 100)}%</span><span>Silhouette Accuracy</span></div>
+                <div className="stat stat--accent"><span className="big">{Math.round(route.accuracy * 100)}%</span><span>Silhuettprecision</span></div>
                 <div className="stat"><span className="big">{(route.distance / 1000).toFixed(1)}</span><span>km</span></div>
                 <div className="stat"><span className="big">{events.length}</span><span>trivia</span></div>
               </div>

@@ -2,7 +2,7 @@
 
 *Run like there's no tomorrow!*
 
-Jurassic Run är en helt onödig löparapp (PWA) som genererar springrundor formade som utdöda djur. Välj ett av 17 utdöda djur, och appen ritar upp en rutt längs riktiga vägar i djurets silhuett, nära där du står. Hur väl rutten liknar djuret visas som **Silhouette Accuracy**.
+Jurassic Run är en helt onödig löparapp (PWA) som genererar springrundor formade som utdöda djur. Välj ett av 17 utdöda djur, och appen ritar upp en rutt längs riktiga vägar i djurets silhuett, nära där du står. Hur väl rutten liknar djuret visas som **Silhuettprecision**.
 
 Under den simulerade löpningen hämtas verklig data från öppna API:er om platserna du passerar: kungagravar, jordbävningar, extremväder, fossilfynd och märklig statistik. En Chuck Norris-inspirerad coach kommenterar allt, och rundan avslutas med en absurd slutrapport.
 
@@ -44,7 +44,7 @@ Allt finns i `src/lib/generate.ts`:
 2. **Landfilter (lokalt, gratis):** Waypoints kontrolleras mot Natural Earth 1:10m (`public/data/`). De ska ligga i samma land och inte i en sjö. Kuststäder får fler omgångar med lite lägre krav.
 3. **Ruttning:** De 3 bästa kandidaterna ruttas via `/api/route`, ett anrop vardera med max 50 waypoints, och svaren cachas.
 4. **Kontroll:** Rutter som går in i ett annat land kastas. Omvägar som är längre än 2,5 gånger fågelvägen blir raka terrängsträckor om de ligger på land.
-5. **Val:** Rutten med högst **Silhouette Accuracy** vinner (`src/lib/accuracy.ts`, ändra `ACCURACY_TOLERANCE` för snällare eller strängare betyg).
+5. **Val:** Rutten med högst **silhuettprecision** vinner (`src/lib/accuracy.ts`, ändra `ACCURACY_TOLERANCE` för snällare eller strängare betyg).
 
 ## Struktur
 

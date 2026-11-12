@@ -21,7 +21,7 @@ function meanDistTo(samples: Pt[], line: Pt[], closed: boolean): number {
 }
 
 /**
- * Silhouette Accuracy (0–1). Symmetriskt medelavstånd mellan rutten och silhuetten,
+ * Silhuettprecision (0–1). Symmetriskt medelavstånd mellan rutten och silhuetten,
  * normaliserat mot silhuettens diagonal. Allt i lokala meter.
  */
 export function silhouetteAccuracy(route: Pt[], shape: Pt[], samples = 200): number {

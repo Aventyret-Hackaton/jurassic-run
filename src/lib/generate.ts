@@ -1,5 +1,5 @@
 /**
- * Kärnan: silhuett → kandidater → land/landsfilter → ruttning → terrängsträckor → Silhouette Accuracy.
+ * Kärnan: silhuett → kandidater → land/landsfilter → ruttning → terrängsträckor → silhuettprecision.
  */
 import { CAR_FACTOR, type Animal } from "../data/animals";
 import { silhouetteAccuracy } from "./accuracy";
@@ -85,7 +85,7 @@ export async function generateRoute(opts: GenerateOptions): Promise<GeneratedRou
   }
   ok.sort((a, b) => b.accuracy - a.accuracy);
   const best = ok[0];
-  onProgress(`Bästa rutten: ${Math.round(best.accuracy * 100)} % Silhouette Accuracy.`);
+  onProgress(`Bästa rutten: ${Math.round(best.accuracy * 100)} % silhuettprecision.`);
   return { ...best, animal, mode, country, candidatesTested: nCand };
 }
 
