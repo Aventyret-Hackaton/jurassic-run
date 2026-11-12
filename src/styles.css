@@ -222,6 +222,7 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
 .animal-card.on .animal-panel { border-color: #fff; box-shadow: 5px 5px 0 var(--magenta), 0 0 0 3px var(--outline), 0 0 24px rgba(255, 47, 179, .6); }
 .animal-card.on .animal-art--comic { transform: translate(-5px, -10px) rotate(-3deg) scale(1.06); }
 .animal-card--surprise { justify-content: flex-end; }
+.animal-card--surprise.shaken { animation: shake .5s ease-out; }
 .surprise-mark {
   position: relative; align-self: center; font-family: var(--font-block); font-size: 72px; line-height: 1; padding-top: 4px;
   color: var(--sun); -webkit-text-stroke: 3px var(--outline); paint-order: stroke fill;

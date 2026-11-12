@@ -15,6 +15,7 @@ import { fetchEvents, type RouteEvent } from "./lib/events";
 import { generateRoute, type GeneratedRoute } from "./lib/generate";
 import { pepLines, pepStops, type Pep } from "./lib/pep";
 import type { LngLat } from "./lib/shape";
+import { requestMotionPermission, useShake } from "./lib/shake";
 import { getSilhouette } from "./lib/silhouettes";
 import { useRunner } from "./lib/useRunner";
 import { currentWeather, type Weather } from "./lib/weather";
@@ -95,6 +96,7 @@ export default function App() {
   const runAgain = () => { seen.current = new Set(); runner.seek(0); setPhase("ready"); };
 
   const pickHere = () => {
+    requestMotionPermission();
     setError(""); setLocating(true);
     navigator.geolocation.getCurrentPosition(
       (p) => { setLocating(false); setPlace({ at: [p.coords.longitude, p.coords.latitude], label: HERE_LABEL }); setStep("animal"); },
@@ -103,12 +105,20 @@ export default function App() {
     );
   };
 
-  const pickCity = (c: { name: string; at: LngLat }) => { setError(""); setPlace({ at: c.at, label: c.name }); setStep("animal"); };
+  const pickCity = (c: { name: string; at: LngLat }) => { requestMotionPermission(); setError(""); setPlace({ at: c.at, label: c.name }); setStep("animal"); };
 
   const surprise = () => {
     const pool = ANIMALS.filter((a) => getSilhouette(a.id) && a.id !== animal?.id);
     setAnimal(pool[Math.floor(Math.random() * pool.length)]);
   };
+
+  // Skaka telefonen i djurvalet = "Överraska mig". Kortet gungar till som kvitto.
+  const [shook, setShook] = useState(false);
+  const canShake = useShake(step === "animal", () => {
+    surprise();
+    setShook(true);
+    setTimeout(() => setShook(false), 500);
+  });
 
   const generate = async () => {
     if (!animal || !place) return;
@@ -155,7 +165,7 @@ export default function App() {
       {step === "start" && (
         <StartIntro
           playIntro={!introPlayed.current}
-          onStart={() => { introPlayed.current = true; setStep("where"); }}
+          onStart={() => { requestMotionPermission(); introPlayed.current = true; setStep("where"); }}
         />
       )}
 
@@ -191,12 +201,12 @@ export default function App() {
           <TopBar step={2} onBack={() => setStep("where")} />
           <Coach question="Vilket djur vill du springa?" note={place ? `Start: ${place.label}` : undefined} />
           <div className="animal-grid">
-            <button className="animal-card animal-card--surprise" onClick={surprise} style={{ "--panel": "#22e6ff" } as React.CSSProperties}>
+            <button className={`animal-card animal-card--surprise ${shook ? "shaken" : ""}`} onClick={surprise} style={{ "--panel": "#22e6ff" } as React.CSSProperties}>
               <span className="animal-panel" aria-hidden />
               <span className="surprise-mark" aria-hidden>?</span>
               <span className="animal-caption">
                 <span className="animal-name">Överraska mig</span>
-                <span className="animal-km">Chuck väljer</span>
+                <span className="animal-km">{canShake ? "Tryck eller skaka 📳" : "Chuck väljer"}</span>
               </span>
             </button>
             {ANIMALS.map((a) => {
