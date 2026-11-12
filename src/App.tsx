@@ -1,6 +1,7 @@
 import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimalArt, animalBg } from "./components/AnimalArt";
+import { ChuckOnAnimal } from "./components/ChuckOnAnimal";
 import { ChuckOnDodo } from "./components/ChuckOnDodo";
 import { FinalReport } from "./components/FinalReport";
 import { PepTalk } from "./components/PepTalk";
@@ -296,7 +297,8 @@ export default function App() {
 
           {phase === "generating" && (
             <div className="generating">
-              <ChuckOnDodo size={150} className="bob" />
+              {/* Chuck rider på det valda djuret medan rundan ritas */}
+              {animal ? <ChuckOnAnimal id={animal.id} size={200} className="bob" /> : <ChuckOnDodo size={150} className="bob" />}
               <p className="generating-title">Chuck ritar din {animal?.name.toLowerCase()}…</p>
               <ul className="log">{log.slice(-4).map((l, i) => <li key={i}>{l}</li>)}</ul>
             </div>
