@@ -54,7 +54,7 @@ export default defineConfig(({ mode }) => {
         manifest: {
           name: "Jurassic Run",
           short_name: "Jurassic Run",
-          description: "Run like there's no tomorrow! Löprundor formade som utdöda djur.",
+          description: "Löprundor formade som utdöda djur.",
           theme_color: "#07051a",
           background_color: "#07051a",
           display: "standalone",

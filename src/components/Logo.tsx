@@ -69,7 +69,7 @@ export function Logo({ compact = false }: { compact?: boolean }) {
   const mid = (WORD.length - 1) / 2;
   return (
     <div className={`logo ${compact ? "logo--compact" : ""}`} role="img" aria-label="Jurassic Run">
-      {!compact && <div className="logo-top" aria-hidden>Coach Norris presents</div>}
+      {!compact && <div className="logo-top" aria-hidden>Coach Norris presenterar</div>}
       <div className="logo-arc" aria-hidden>
         {WORD.map((ch, i) => {
           const d = i - mid;
@@ -91,7 +91,6 @@ export function Logo({ compact = false }: { compact?: boolean }) {
         {!compact && <span className="logo-spark logo-spark--l" />}
         {!compact && <span className="logo-spark logo-spark--r" />}
       </div>
-      {!compact && <div className="logo-tag">Run like there's no tomorrow</div>}
     </div>
   );
 }

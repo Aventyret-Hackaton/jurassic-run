@@ -94,7 +94,6 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
 @keyframes flicker { 0%, 92%, 100% { opacity: 1; } 94% { opacity: .3; } 96% { opacity: 1; } 97% { opacity: .5; } }
 .logo-spark { position: absolute; top: .12em; width: 10px; height: 10px; background: #fff; border-radius: 50%; box-shadow: 0 0 10px 4px #fff, 0 0 22px 8px var(--red); z-index: 3; }
 .logo-spark--l { left: 33%; } .logo-spark--r { right: 31%; top: .4em; }
-.logo-tag { position: relative; z-index: 2; font-size: 12px; letter-spacing: .3em; text-transform: uppercase; color: var(--cyan); text-shadow: 0 0 4px var(--night), 0 0 8px var(--cyan); margin-top: 14px; }
 
 .logo--compact .logo-chrome { font-size: 22px; -webkit-text-stroke: .6px #eaf8ff; filter: drop-shadow(0 1px 0 #081a40) drop-shadow(0 0 6px rgba(120, 200, 255, .6)); }
 .logo--compact .logo-run-wrap { font-size: 30px; margin-top: -0.3em; }

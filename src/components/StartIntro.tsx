@@ -22,7 +22,7 @@ export function StartIntro({ playIntro, onStart }: { playIntro: boolean; onStart
         <div className="speech intro-speech"><p>Redo, rekryt?</p></div>
       </div>
       <div className="intro-cta">
-        <button className="btn-neon btn-start" onClick={onStart}>Press start</button>
+        <button className="btn-neon btn-start" onClick={onStart}>Starta</button>
         <p className="fineprint">En helt onödig löparapp. Rutterna formas som utdöda djur.</p>
       </div>
     </main>
