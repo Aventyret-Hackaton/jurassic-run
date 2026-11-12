@@ -24,11 +24,36 @@ interface Props {
   onDrawn?: () => void;
   /** Extra utrymme (px) i botten för panelen när rutten passas in. */
   bottomInset?: number;
+  /** Följ löparen: kartan zoomar in och håller löparen i mitten. */
+  follow?: boolean;
+  /** Zoomnivå när kartan följer löparen. */
+  followZoom?: number;
+  /** Visa hela rutten igen (t.ex. när rundan är slut). */
+  overview?: boolean;
+  /** Anropas när löparen går ut i eller kommer upp ur vatten (bara när kartan följer löparen). */
+  onWaterChange?: (inWater: boolean) => void;
 }
+
+/**
+ * Dämpad kamera när kartan följer löparen. Rutten svänger hela tiden längs gatorna,
+ * och en kamera som hänger med i varje sväng ger lätt illamående. Därför:
+ *  - Dödzon: kameran står still så länge löparen är nära mitten.
+ *  - Dämpning: kameran glider efter löparen med tidskonstanten TAU, så att små
+ *    sicksack-svängar jämnas ut.
+ *  - Ikappkörning: om löparen är på väg ut ur bilden följer kameran snabbare.
+ */
+const CAMERA = {
+  TAU_S: 0.9,
+  DEAD_ZONE_PX: 50,
+  /** Del av skärmens minsta mått där kameran börjar köra ikapp. */
+  CATCH_UP_AT: 0.32,
+  /** Med "minska rörelse" i systemet: stor dödzon, så att kameran flyttar sig sällan. */
+  REDUCED_DEAD_ZONE: 0.3,
+};
 
 interface Sparkle { at: LngLat; born: number; size: number; color: string }
 
-export function MapView({ center, route, runner, events, passedKm, onDrawn, bottomInset = 0 }: Props) {
+export function MapView({ center, route, runner, events, passedKm, onDrawn, bottomInset = 0, follow = false, followZoom = 15, overview = false, onWaterChange }: Props) {
   const el = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const ready = useRef<Promise<void> | null>(null);
@@ -36,6 +61,16 @@ export function MapView({ center, route, runner, events, passedKm, onDrawn, bott
   const homeMarker = useRef<maplibregl.Marker | null>(null);
   const onDrawnRef = useRef(onDrawn);
   onDrawnRef.current = onDrawn;
+  const onWaterRef = useRef(onWaterChange);
+  onWaterRef.current = onWaterChange;
+  /** Kartlagren med vattenytor och vägar (för broar), från kartstilen. */
+  const layerIds = useRef<{ water: string[]; roads: string[] }>({ water: [], roads: [] });
+  const inWater = useRef(false);
+  /** Följer kartan löparen just nu, och pågår inzoomningen fortfarande? */
+  const following = useRef(false);
+  const easing = useRef(false);
+  /** Löparens senaste position, som den dämpade kameran glider efter. */
+  const runnerPos = useRef<LngLat | null>(null);
 
   useEffect(() => {
     const m = new maplibregl.Map({ container: el.current!, style: STYLE, center, zoom: 11, attributionControl: { compact: true } });
@@ -66,6 +101,12 @@ export function MapView({ center, route, runner, events, passedKm, onDrawn, bott
         "circle-radius": 6, "circle-stroke-width": 2, "circle-stroke-color": "#1a1033",
         "circle-color": ["case", ["get", "passed"], "#ffe45c", "#6b5b9a"],
       } });
+      // Lagren i OpenMapTiles-stilen: "water" är vattenytor, "transportation" är vägar och broar.
+      const styleLayers = m.getStyle().layers as (maplibregl.LayerSpecification & { "source-layer"?: string })[];
+      layerIds.current = {
+        water: styleLayers.filter((l) => l["source-layer"] === "water" && l.type === "fill").map((l) => l.id),
+        roads: styleLayers.filter((l) => l["source-layer"] === "transportation" && l.type === "line").map((l) => l.id),
+      };
       res();
     }));
     return () => m.remove();
@@ -94,12 +135,7 @@ export function MapView({ center, route, runner, events, passedKm, onDrawn, bott
       set("head", empty);
       if (!route) { set("ghost", empty); set("route", empty); return; }
 
-      const all = [...route.line, ...route.ghost];
-      const xs = all.map((p) => p[0]), ys = all.map((p) => p[1]);
-      const wide = window.innerWidth > 760;
-      m.fitBounds([[Math.min(...xs), Math.min(...ys)], [Math.max(...xs), Math.max(...ys)]], {
-        padding: { top: 80, bottom: 40 + bottomInset, left: wide ? 480 : 32, right: wide ? 60 : 32 }, duration: 1200,
-      });
+      fitRoute(m, route, bottomInset, 1200);
 
       set("ghost", { type: "Feature", properties: {}, geometry: { type: "Polygon", coordinates: [route.ghost] } });
       showGhost(m, true, 0); // ny rutt: djuret syns direkt igen
@@ -169,19 +205,110 @@ export function MapView({ center, route, runner, events, passedKm, onDrawn, bott
     });
   }, [events, passedKm]);
 
-  // Löparen
+  // Löparen: markören, kameran som följer med, och vattenkontrollen.
   useEffect(() => {
     const m = map.current!;
-    if (!runner) { runnerMarker.current?.remove(); runnerMarker.current = null; return; }
+    if (!runner) {
+      runnerMarker.current?.remove(); runnerMarker.current = null;
+      inWater.current = false;
+      following.current = false;
+      return;
+    }
     if (!runnerMarker.current) {
       const div = document.createElement("div");
       div.className = "runner-marker";
-      div.textContent = route?.animal.emoji ?? "🏃";
+      // Ikonen ligger i ett inre element: maplibre flyttar markören med transform på yttre elementet.
+      const icon = document.createElement("span");
+      // Löparen är en lysande cyan plupp. I vatten får den krusningar runt sig.
+      icon.className = "runner-icon";
+      div.appendChild(icon);
       runnerMarker.current = new maplibregl.Marker({ element: div }).setLngLat(runner).addTo(m);
     } else runnerMarker.current.setLngLat(runner);
-  }, [runner, route]);
+    runnerPos.current = runner;
+    if (!follow) return;
+
+    // Vatten under löparen? Kontrollera bara när kartan följer löparen, då är platsen ritad.
+    const ids = layerIds.current;
+    if (!ids.water.length || easing.current) return;
+    const pt = m.project(runner);
+    let wet = m.queryRenderedFeatures(pt, { layers: ids.water }).length > 0;
+    if (wet && ids.roads.length) {
+      // En bro över vattnet, eller en tunnel under det, räknas inte som simning.
+      const box: [maplibregl.PointLike, maplibregl.PointLike] = [[pt.x - 6, pt.y - 6], [pt.x + 6, pt.y + 6]];
+      const dry = (f: maplibregl.MapGeoJSONFeature) => f.properties?.brunnel === "bridge" || f.properties?.brunnel === "tunnel";
+      if (m.queryRenderedFeatures(box, { layers: ids.roads }).some(dry)) wet = false;
+    }
+    if (wet !== inWater.current) {
+      inWater.current = wet;
+      const icon = runnerMarker.current!.getElement().firstElementChild as HTMLElement;
+      icon.classList.toggle("runner-icon--swim", wet);
+      onWaterRef.current?.(wet);
+    }
+  }, [runner, route, follow]);
+
+  // Den dämpade kameran (se CAMERA). Zoomar in mjukt och glider sedan efter löparen.
+  useEffect(() => {
+    const m = map.current;
+    // Vid paus (trivia, peppning, simning) står kameran still. Den zoomar inte om när rundan
+    // fortsätter, utan glider vidare därifrån.
+    if (!m || !follow || !runnerPos.current) return;
+    let raf = 0, last = 0, stopped = false;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    const tick = (now: number) => {
+      if (stopped) return;
+      const dt = last ? Math.min(0.1, (now - last) / 1000) : 0;
+      last = now;
+      const target = runnerPos.current;
+      if (target && dt > 0 && !easing.current) {
+        const cam = m.project(m.getCenter());
+        const run = m.project(target);
+        const dx = run.x - cam.x, dy = run.y - cam.y;
+        const d = Math.hypot(dx, dy);
+        const minSide = Math.min(m.getContainer().clientWidth, m.getContainer().clientHeight);
+        const dead = reduced ? CAMERA.REDUCED_DEAD_ZONE * minSide : CAMERA.DEAD_ZONE_PX;
+        if (d > dead) {
+          // Flytta bara den del som ligger utanför dödzonen, dämpat över tid.
+          const catchUp = d > CAMERA.CATCH_UP_AT * minSide ? 3 : 1;
+          const k = 1 - Math.exp((-dt * catchUp) / (reduced ? 0.5 : CAMERA.TAU_S));
+          const f = ((d - dead) / d) * k;
+          m.jumpTo({ center: m.unproject([cam.x + dx * f, cam.y + dy * f]) });
+        }
+      }
+      raf = requestAnimationFrame(tick);
+    };
+
+    if (!following.current) {
+      following.current = true;
+      easing.current = true;
+      m.easeTo({ center: runnerPos.current, zoom: followZoom, padding: { top: 70, bottom: bottomInset, left: 0, right: 0 }, duration: 900 });
+      m.once("moveend", () => { easing.current = false; });
+    }
+    raf = requestAnimationFrame(tick);
+    return () => { stopped = true; cancelAnimationFrame(raf); };
+  }, [follow, followZoom, bottomInset]);
+
+  // Visa hela rutten igen när rundan är slut.
+  useEffect(() => {
+    if (!overview || !route) return;
+    ready.current?.then(() => {
+      following.current = false;
+      fitRoute(map.current!, route, bottomInset, 1200);
+    });
+  }, [overview, route, bottomInset]);
 
   return <div ref={el} className="map" />;
+}
+
+/** Passa in hela rutten och spöket i bild. */
+function fitRoute(m: maplibregl.Map, route: GeneratedRoute, bottomInset: number, duration: number) {
+  const all = [...route.line, ...route.ghost];
+  const xs = all.map((p) => p[0]), ys = all.map((p) => p[1]);
+  const wide = window.innerWidth > 760;
+  m.setPadding({ top: 0, bottom: 0, left: 0, right: 0 });
+  m.fitBounds([[Math.min(...xs), Math.min(...ys)], [Math.max(...xs), Math.max(...ys)]], {
+    padding: { top: 80, bottom: 40 + bottomInset, left: wide ? 480 : 32, right: wide ? 60 : 32 }, duration,
+  });
 }
 
 /** Visa eller tona ut djurets kontur (spöket) med en mjuk övergång på `ms` millisekunder. */

@@ -5,6 +5,7 @@ import { ChuckOnDodo } from "./components/ChuckOnDodo";
 import { FinalReport } from "./components/FinalReport";
 import { PepTalk } from "./components/PepTalk";
 import { StartIntro } from "./components/StartIntro";
+import { SwimNotice } from "./components/SwimNotice";
 import { TriviaOverlay } from "./components/TriviaOverlay";
 import { Logo } from "./components/Logo";
 import { MapView } from "./components/MapView";
@@ -18,6 +19,7 @@ import type { LngLat } from "./lib/shape";
 import { requestMotionPermission, useShake } from "./lib/shake";
 import { getSilhouette } from "./lib/silhouettes";
 import { useRunner } from "./lib/useRunner";
+import { pickSwimLine } from "./lib/swim";
 import { currentWeather, type Weather } from "./lib/weather";
 
 /** Wizardens steg. "run" är kartvyn med rutt, löpning och slutrapport. */
@@ -27,7 +29,12 @@ type Phase = "generating" | "drawing" | "ready" | "done";
 interface Place { at: LngLat; label: string }
 
 /** Ett stopp under löpningen: en trivia eller en peppning från Chuck. */
-interface Stop { key: string; kind: "trivia" | "pep"; i: number; km: number }
+interface Stop { key: string; kind: "trivia" | "pep" | "swim"; i: number; km: number }
+
+/** Minsta avstånd (km) mellan två simstopp, så att bryggor och små vikar inte ger ett stopp var tionde meter. */
+const SWIM_GAP_KM = 0.3;
+/** Så här många pixlar per sekund ska kartan glida förbi när den följer löparen. */
+const FOLLOW_PX_PER_SEC = 110;
 
 /** Städerna i fråga 1 (Stockholm finns kvar i CITIES för ?city=stockholm). */
 const WIZARD_CITIES = CITIES.filter((c) => c.name !== "Stockholm");
@@ -60,6 +67,10 @@ export default function App() {
   /** Stoppet som visas just nu, och nycklarna för de stopp som redan visats. */
   const [active, setActive] = useState<Stop | null>(null);
   const seen = useRef(new Set<string>());
+  /** Simning: repliken som visas, var förra simstoppet var och vilka repliker som använts. */
+  const [swimLine, setSwimLine] = useState("");
+  const lastSwimKm = useRef(-Infinity);
+  const usedSwimLines = useRef(new Set<number>());
   /** Introt på startskärmen spelas bara första gången. */
   const introPlayed = useRef(false);
   const [duration, setDuration] = useState(30);
@@ -90,10 +101,32 @@ export default function App() {
   const seek = (p: number) => {
     const km = p * runner.totalKm;
     seen.current = new Set(stops.flatMap((s) => (s.km < km ? [s.key] : [])));
+    lastSwimKm.current = -Infinity;
     runner.seek(p);
   };
   const resume = () => { setActive(null); if (runner.progress < 1) runner.play(); };
-  const runAgain = () => { seen.current = new Set(); runner.seek(0); setPhase("ready"); };
+  const runAgain = () => { seen.current = new Set(); lastSwimKm.current = -Infinity; runner.seek(0); setPhase("ready"); };
+
+  /** Kartan säger till när löparen går ut i vatten. Då pausar rundan och Chuck säger sitt. */
+  const onWaterChange = (wet: boolean) => {
+    if (!wet || !runner.playing || phase !== "ready" || active !== null) return;
+    if (runner.km - lastSwimKm.current < SWIM_GAP_KM) return;
+    runner.pause();
+    lastSwimKm.current = runner.km;
+    setSwimLine(pickSwimLine(usedSwimLines.current));
+    setActive({ key: `s${runner.km.toFixed(2)}`, kind: "swim", i: 0, km: runner.km });
+  };
+
+  // Zoomnivå när kartan följer löparen: snabb uppspelning ger mindre inzoomning,
+  // så att kartan hinner rita och man ser vart löparen är på väg.
+  const followZoom = (() => {
+    if (!route) return 15;
+    const metersPerSec = route.distance / duration;
+    const metersPerPx = metersPerSec / FOLLOW_PX_PER_SEC;
+    const lat = route.line[0][1];
+    const z = Math.log2((156543 * Math.cos((lat * Math.PI) / 180)) / metersPerPx);
+    return Math.min(16.5, Math.max(12.5, z));
+  })();
 
   const pickHere = () => {
     requestMotionPermission();
@@ -133,6 +166,7 @@ export default function App() {
       setEvents(ev); setLines(c.lines); setIntro(joke);
       const totalKm = r.distance / 1000;
       setPeps(pepLines(pepStops(totalKm, ev.map((e) => e.km)), totalKm, animal.name));
+      lastSwimKm.current = -Infinity; usedSwimLines.current = new Set();
       setRoute(r); setPhase("drawing");
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -159,6 +193,10 @@ export default function App() {
         passedKm={runner.km}
         onDrawn={() => setPhase((p) => (p === "drawing" ? "ready" : p))}
         bottomInset={260}
+        follow={step === "run" && phase === "ready" && runner.playing}
+        followZoom={followZoom}
+        overview={step === "run" && phase === "done"}
+        onWaterChange={onWaterChange}
       />
 
       {/* ---------- Startskärm ---------- */}
@@ -306,6 +344,10 @@ export default function App() {
               coachLine={lineFor(events[active.i])}
               onContinue={resume}
             />
+          )}
+
+          {active?.kind === "swim" && (
+            <SwimNotice line={swimLine} km={active.km} onJump={resume} />
           )}
 
           {active?.kind === "pep" && peps[active.i] && (
