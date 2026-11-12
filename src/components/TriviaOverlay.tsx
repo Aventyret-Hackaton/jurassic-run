@@ -28,11 +28,13 @@ interface Props {
  */
 export function TriviaOverlay({ event, index, total, coachLine, onContinue }: Props) {
   const [image, setImage] = useState<string | undefined>();
+  const [imageReady, setImageReady] = useState(false);
 
   // Bara bilden från Wikipedia. Texten håller vi kort.
   useEffect(() => {
     let alive = true;
     setImage(undefined);
+    setImageReady(false);
     wikiSummary(event.wiki).then((s) => { if (alive) setImage(s?.image); });
     return () => { alive = false; };
   }, [event]);
@@ -48,11 +50,20 @@ export function TriviaOverlay({ event, index, total, coachLine, onContinue }: Pr
           </div>
           {image && (
             <img
-              className="trivia-img"
+              key={image} // nytt element per bild, så att inget (t.ex. --ar) blir kvar från förra bilden
+              className={`trivia-img ${imageReady ? "is-ready" : ""}`}
               src={image}
               alt=""
-              // Bildens proportioner (bredd/höjd) till CSS, så att den kan begränsas till 45vh utan att beskäras.
-              onLoad={(e) => { const i = e.currentTarget; i.style.setProperty("--ar", String(i.naturalWidth / i.naturalHeight)); }}
+              decoding="async"
+              onLoad={(e) => {
+                const i = e.currentTarget;
+                // Bildens proportioner (bredd/höjd) till CSS, så att den kan begränsas till 45vh utan att beskäras.
+                i.style.setProperty("--ar", String(i.naturalWidth / i.naturalHeight));
+                // Visa först när hela bilden är nedladdad och avkodad. Annars kan en långsam
+                // mobiluppkoppling visa en halvladdad bild (bara övre delen).
+                (i.decode ? i.decode() : Promise.resolve()).catch(() => {}).finally(() => setImageReady(true));
+              }}
+              onError={() => setImage(undefined)}
             />
           )}
           <h2 id="trivia-title" className="trivia-title">{event.title}</h2>
