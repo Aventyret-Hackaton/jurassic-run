@@ -50,7 +50,7 @@ export default defineConfig(({ mode }) => {
       vercelApiInDev(),
       VitePWA({
         registerType: "autoUpdate",
-        includeAssets: ["icon.svg"],
+        includeAssets: ["icon.svg", "apple-touch-icon.png"],
         manifest: {
           name: "Jurassic Run",
           short_name: "Jurassic Run",
@@ -58,7 +58,13 @@ export default defineConfig(({ mode }) => {
           theme_color: "#07051a",
           background_color: "#07051a",
           display: "standalone",
-          icons: [{ src: "icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" }],
+          icons: [
+            // Chucks huvud framför en synthwave-sol, med rosa neonring.
+            { src: "pwa-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+            { src: "pwa-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+            { src: "maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+            { src: "icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" },
+          ],
         },
         workbox: {
           globPatterns: ["**/*.{js,css,html,svg,woff2}"],
