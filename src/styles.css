@@ -89,7 +89,7 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
 .logo-bolt .bolt-glow { stroke: rgba(255, 42, 79, .55); stroke-width: calc(var(--core) * 3); }
 .logo-bolt .bolt-core { stroke: #ffe1e7; stroke-width: var(--core); }
 .logo-bolt .bolt-fork { animation-delay: 1s, 3s; opacity: .8; }
-.intro .logo-bolt .bolt-fork { animation-delay: 2.6s, 4.5s; }
+.intro .logo-bolt .bolt-fork { animation-delay: 2.95s, 4.85s; }
 @keyframes bolt { to { stroke-dashoffset: 0; } }
 @keyframes flicker { 0%, 92%, 100% { opacity: 1; } 94% { opacity: .3; } 96% { opacity: 1; } 97% { opacity: .5; } }
 .logo-spark { position: absolute; top: .12em; width: 10px; height: 10px; background: #fff; border-radius: 50%; box-shadow: 0 0 10px 4px #fff, 0 0 22px 8px var(--red); z-index: 3; }
@@ -401,21 +401,23 @@ input[type="range"] { width: 100%; accent-color: var(--magenta); }
 @keyframes run-leg { from { transform: rotate(-28deg); } to { transform: rotate(28deg); } }
 @keyframes gallop { to { transform: translateY(-6px); } }
 
-.intro { animation: screen-in .35s ease-out, shake .45s 1.55s ease-out; }
-.intro .intro-rider { animation: ride-in 1.35s cubic-bezier(.25, .8, .35, 1) .25s both; }
-.intro .intro-rider .chuck .chuck-leg, .intro .intro-rider .chuck .chuck-dodo, .intro .intro-rider .chuck .chuck-rider { animation-iteration-count: 10; }
-.intro .intro-logo { animation: slam .55s 1.7s cubic-bezier(.3, 1.4, .5, 1) both; }
-.intro .logo-bolt polyline { animation-delay: 2.1s, 4s; }
-.intro .intro-cta { animation: fade-up .5s 2.4s ease-out both; }
-.intro .intro-speech { animation: pop .35s 2.7s cubic-bezier(.3, 1.6, .5, 1) both; }
-.intro-flash { position: fixed; inset: 0; z-index: 20; pointer-events: none; background: #fff; opacity: 0; animation: flash .6s 1.62s ease-out both; }
+/* Introts tidslinje: ritten tar 1,7 s (startar 0,25 s), sladd ca 1,58–1,75 s, stopp 1,95 s.
+   Skak, blixt, logga, knapp och pratbubbla ligger efter stoppet. */
+.intro { animation: screen-in .35s ease-out, shake .45s 1.9s ease-out; }
+.intro .intro-rider { animation: ride-in 1.7s cubic-bezier(.25, .8, .35, 1) .25s both; }
+.intro .intro-rider .chuck .chuck-leg, .intro .intro-rider .chuck .chuck-dodo, .intro .intro-rider .chuck .chuck-rider { animation-iteration-count: 14; }
+.intro .intro-logo { animation: slam .55s 2.05s cubic-bezier(.3, 1.4, .5, 1) both; }
+.intro .logo-bolt polyline { animation-delay: 2.45s, 4.35s; }
+.intro .intro-cta { animation: fade-up .5s 2.75s ease-out both; }
+.intro .intro-speech { animation: pop .35s 3.05s cubic-bezier(.3, 1.6, .5, 1) both; }
+.intro-flash { position: fixed; inset: 0; z-index: 20; pointer-events: none; background: #fff; opacity: 0; animation: flash .6s 1.97s ease-out both; }
 .intro-dust { position: absolute; left: 10%; right: 10%; bottom: 0; height: 40px; pointer-events: none; }
 .intro-dust span {
   position: absolute; bottom: 0; width: 46px; height: 46px; border-radius: 50%;
   background: radial-gradient(circle, rgba(255, 210, 240, .7), rgba(255, 47, 179, .25) 55%, transparent 70%);
-  /* Dammet startar när ride-in är klar (0,25 s + 1,35 s = 1,6 s), 0,05 s mellan molnen.
+  /* Dammet startar i sladden (ca 1,55 s), så det ser ut som att dronten bromsar. 0,05 s mellan molnen.
      forwards, inte both: annars syns första nyckelbilden (opacitet .9) under hela väntan. */
-  --dust-start: 1.6s;
+  --dust-start: 1.55s;
   opacity: 0; animation: dust .9s calc(var(--dust-start) + var(--i, 0) * .05s) ease-out forwards;
 }
 .intro-dust span:nth-child(1) { left: -10%; --dx: -70px; --i: 0; } .intro-dust span:nth-child(2) { left: 10%; --dx: -40px; --i: 1; }
