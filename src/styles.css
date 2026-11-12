@@ -222,6 +222,7 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
 .animal-card.on .animal-panel { border-color: #fff; box-shadow: 5px 5px 0 var(--magenta), 0 0 0 3px var(--outline), 0 0 24px rgba(255, 47, 179, .6); }
 .animal-card.on .animal-art--comic { transform: translate(-5px, -10px) rotate(-3deg) scale(1.06); }
 .animal-card--surprise { justify-content: flex-end; }
+.animal-card--surprise.shaken { animation: shake .5s ease-out; }
 .surprise-mark {
   position: relative; align-self: center; font-family: var(--font-block); font-size: 72px; line-height: 1; padding-top: 4px;
   color: var(--sun); -webkit-text-stroke: 3px var(--outline); paint-order: stroke fill;
@@ -281,7 +282,7 @@ input[type="range"] { width: 100%; accent-color: var(--magenta); }
 
 
 .home-marker { width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); border: 3px solid #fff; box-shadow: 0 0 0 6px rgba(34, 230, 255, .25), 0 0 16px var(--cyan); }
-.runner-marker { font-size: 30px; filter: drop-shadow(0 0 6px var(--magenta)) drop-shadow(0 0 2px #fff); }
+.runner-marker { width: 18px; height: 18px; }
 .maplibregl-ctrl-attrib { background: rgba(7, 5, 26, .6) !important; color: var(--muted); }
 .maplibregl-ctrl-attrib a { color: var(--muted) !important; }
 
@@ -457,3 +458,39 @@ input[type="range"] { width: 100%; accent-color: var(--magenta); }
 .spotify small { display: block; font-size: 12px; color: var(--muted); }
 .spotify > span:nth-child(2) { flex: 1; }
 .spotify .choice-arrow { color: #1ed760; }
+/* Löparen: en lysande cyan plupp med vit kärna som pulserar lugnt. */
+.runner-icon {
+  position: relative; display: block; width: 18px; height: 18px; border-radius: 50%;
+  background: radial-gradient(circle, #fff 0 22%, var(--cyan) 46%, #0fb8d6 100%);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, .85), 0 0 10px 3px var(--cyan), 0 0 26px 8px rgba(34, 230, 255, .45);
+  animation: runner-pulse 1.6s ease-in-out infinite;
+}
+@keyframes runner-pulse { 50% { box-shadow: 0 0 0 2px rgba(255, 255, 255, .85), 0 0 14px 5px var(--cyan), 0 0 34px 12px rgba(34, 230, 255, .55); } }
+/* I vatten: krusningar som sprider sig från pluppen. */
+.runner-icon--swim::before, .runner-icon--swim::after {
+  content: ""; position: absolute; inset: -2px; border-radius: 50%; border: 2px solid var(--cyan);
+  animation: runner-ripple 1.4s ease-out infinite;
+}
+.runner-icon--swim::after { animation-delay: .7s; }
+@keyframes runner-ripple { from { transform: scale(1); opacity: .9; } to { transform: scale(3.2); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .runner-icon, .runner-icon--swim::before, .runner-icon--swim::after { animation: none; } }
+
+/* ---------- Simning: Chuck i vattnet ---------- */
+.swim { background: linear-gradient(180deg, rgba(7, 5, 26, .1), rgba(10, 40, 80, .85) 70%); }
+.swim .speech { box-shadow: 5px 5px 0 var(--cyan); }
+.swim .pep-speech small { color: #1d6fa5; }
+.swim-btn {
+  background: linear-gradient(180deg, #5fe0ff 0%, #22b5e6 45%, #1270a8 100%);
+  box-shadow: 0 0 0 2px #d0f6ff, 0 0 18px 2px rgba(34, 230, 255, .7), 0 5px 0 #0b3f63; text-shadow: 0 2px 0 #0b3f63;
+}
+.swim-btn:active:not(:disabled) { box-shadow: 0 0 0 2px #d0f6ff, 0 0 12px rgba(34, 230, 255, .6), 0 2px 0 #0b3f63; }
+.chuck-swim { overflow: visible; }
+.chuck-swim .swim-arm { animation: crawl 1.1s ease-in-out infinite; }
+.chuck-swim .swim-wave--back { animation: wave 2.4s ease-in-out infinite alternate; }
+.chuck-swim .swim-wave--front { animation: wave 1.8s ease-in-out infinite alternate-reverse; }
+.chuck-swim .swim-dodo { animation: bob 1.3s ease-in-out infinite; }
+.chuck-swim .swim-splash circle { transform-box: fill-box; transform-origin: center; animation: twinkle 0.9s ease-in-out infinite; }
+.chuck-swim .swim-splash circle:nth-child(even) { animation-delay: .45s; }
+.chuck-swim .chuck-band-tail { transform-origin: 84px 30px; animation: flap .5s ease-in-out infinite alternate; }
+@keyframes crawl { 0% { transform: rotate(0); } 50% { transform: rotate(-38deg); } 100% { transform: rotate(0); } }
+@keyframes wave { to { transform: translateX(-30px); } }

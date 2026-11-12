@@ -5,6 +5,7 @@ import { ChuckOnDodo } from "./components/ChuckOnDodo";
 import { FinalReport } from "./components/FinalReport";
 import { PepTalk } from "./components/PepTalk";
 import { StartIntro } from "./components/StartIntro";
+import { SwimNotice } from "./components/SwimNotice";
 import { TriviaOverlay } from "./components/TriviaOverlay";
 import { Logo } from "./components/Logo";
 import { MapView } from "./components/MapView";
@@ -15,8 +16,10 @@ import { fetchEvents, type RouteEvent } from "./lib/events";
 import { generateRoute, type GeneratedRoute } from "./lib/generate";
 import { pepLines, pepStops, type Pep } from "./lib/pep";
 import type { LngLat } from "./lib/shape";
+import { requestMotionPermission, useShake } from "./lib/shake";
 import { getSilhouette } from "./lib/silhouettes";
 import { useRunner } from "./lib/useRunner";
+import { pickSwimLine } from "./lib/swim";
 import { currentWeather, type Weather } from "./lib/weather";
 
 /** Wizardens steg. "run" är kartvyn med rutt, löpning och slutrapport. */
@@ -26,7 +29,12 @@ type Phase = "generating" | "drawing" | "ready" | "done";
 interface Place { at: LngLat; label: string }
 
 /** Ett stopp under löpningen: en trivia eller en peppning från Chuck. */
-interface Stop { key: string; kind: "trivia" | "pep"; i: number; km: number }
+interface Stop { key: string; kind: "trivia" | "pep" | "swim"; i: number; km: number }
+
+/** Minsta avstånd (km) mellan två simstopp, så att bryggor och små vikar inte ger ett stopp var tionde meter. */
+const SWIM_GAP_KM = 0.3;
+/** Så här många pixlar per sekund ska kartan glida förbi när den följer löparen. */
+const FOLLOW_PX_PER_SEC = 110;
 
 /** Städerna i fråga 1 (Stockholm finns kvar i CITIES för ?city=stockholm). */
 const WIZARD_CITIES = CITIES.filter((c) => c.name !== "Stockholm");
@@ -59,6 +67,10 @@ export default function App() {
   /** Stoppet som visas just nu, och nycklarna för de stopp som redan visats. */
   const [active, setActive] = useState<Stop | null>(null);
   const seen = useRef(new Set<string>());
+  /** Simning: repliken som visas, var förra simstoppet var och vilka repliker som använts. */
+  const [swimLine, setSwimLine] = useState("");
+  const lastSwimKm = useRef(-Infinity);
+  const usedSwimLines = useRef(new Set<number>());
   /** Introt på startskärmen spelas bara första gången. */
   const introPlayed = useRef(false);
   const [duration, setDuration] = useState(30);
@@ -89,12 +101,35 @@ export default function App() {
   const seek = (p: number) => {
     const km = p * runner.totalKm;
     seen.current = new Set(stops.flatMap((s) => (s.km < km ? [s.key] : [])));
+    lastSwimKm.current = -Infinity;
     runner.seek(p);
   };
   const resume = () => { setActive(null); if (runner.progress < 1) runner.play(); };
-  const runAgain = () => { seen.current = new Set(); runner.seek(0); setPhase("ready"); };
+  const runAgain = () => { seen.current = new Set(); lastSwimKm.current = -Infinity; runner.seek(0); setPhase("ready"); };
+
+  /** Kartan säger till när löparen går ut i vatten. Då pausar rundan och Chuck säger sitt. */
+  const onWaterChange = (wet: boolean) => {
+    if (!wet || !runner.playing || phase !== "ready" || active !== null) return;
+    if (runner.km - lastSwimKm.current < SWIM_GAP_KM) return;
+    runner.pause();
+    lastSwimKm.current = runner.km;
+    setSwimLine(pickSwimLine(usedSwimLines.current));
+    setActive({ key: `s${runner.km.toFixed(2)}`, kind: "swim", i: 0, km: runner.km });
+  };
+
+  // Zoomnivå när kartan följer löparen: snabb uppspelning ger mindre inzoomning,
+  // så att kartan hinner rita och man ser vart löparen är på väg.
+  const followZoom = (() => {
+    if (!route) return 15;
+    const metersPerSec = route.distance / duration;
+    const metersPerPx = metersPerSec / FOLLOW_PX_PER_SEC;
+    const lat = route.line[0][1];
+    const z = Math.log2((156543 * Math.cos((lat * Math.PI) / 180)) / metersPerPx);
+    return Math.min(16.5, Math.max(12.5, z));
+  })();
 
   const pickHere = () => {
+    requestMotionPermission();
     setError(""); setLocating(true);
     navigator.geolocation.getCurrentPosition(
       (p) => { setLocating(false); setPlace({ at: [p.coords.longitude, p.coords.latitude], label: HERE_LABEL }); setStep("animal"); },
@@ -103,12 +138,20 @@ export default function App() {
     );
   };
 
-  const pickCity = (c: { name: string; at: LngLat }) => { setError(""); setPlace({ at: c.at, label: c.name }); setStep("animal"); };
+  const pickCity = (c: { name: string; at: LngLat }) => { requestMotionPermission(); setError(""); setPlace({ at: c.at, label: c.name }); setStep("animal"); };
 
   const surprise = () => {
     const pool = ANIMALS.filter((a) => getSilhouette(a.id) && a.id !== animal?.id);
     setAnimal(pool[Math.floor(Math.random() * pool.length)]);
   };
+
+  // Skaka telefonen i djurvalet = "Överraska mig". Kortet gungar till som kvitto.
+  const [shook, setShook] = useState(false);
+  const canShake = useShake(step === "animal", () => {
+    surprise();
+    setShook(true);
+    setTimeout(() => setShook(false), 500);
+  });
 
   const generate = async () => {
     if (!animal || !place) return;
@@ -123,6 +166,7 @@ export default function App() {
       setEvents(ev); setLines(c.lines); setIntro(joke);
       const totalKm = r.distance / 1000;
       setPeps(pepLines(pepStops(totalKm, ev.map((e) => e.km)), totalKm, animal.name));
+      lastSwimKm.current = -Infinity; usedSwimLines.current = new Set();
       setRoute(r); setPhase("drawing");
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -149,13 +193,17 @@ export default function App() {
         passedKm={runner.km}
         onDrawn={() => setPhase((p) => (p === "drawing" ? "ready" : p))}
         bottomInset={260}
+        follow={step === "run" && phase === "ready" && runner.playing}
+        followZoom={followZoom}
+        overview={step === "run" && phase === "done"}
+        onWaterChange={onWaterChange}
       />
 
       {/* ---------- Startskärm ---------- */}
       {step === "start" && (
         <StartIntro
           playIntro={!introPlayed.current}
-          onStart={() => { introPlayed.current = true; setStep("where"); }}
+          onStart={() => { requestMotionPermission(); introPlayed.current = true; setStep("where"); }}
         />
       )}
 
@@ -191,12 +239,12 @@ export default function App() {
           <TopBar step={2} onBack={() => setStep("where")} />
           <Coach question="Vilket djur vill du springa?" note={place ? `Start: ${place.label}` : undefined} />
           <div className="animal-grid">
-            <button className="animal-card animal-card--surprise" onClick={surprise} style={{ "--panel": "#22e6ff" } as React.CSSProperties}>
+            <button className={`animal-card animal-card--surprise ${shook ? "shaken" : ""}`} onClick={surprise} style={{ "--panel": "#22e6ff" } as React.CSSProperties}>
               <span className="animal-panel" aria-hidden />
               <span className="surprise-mark" aria-hidden>?</span>
               <span className="animal-caption">
                 <span className="animal-name">Överraska mig</span>
-                <span className="animal-km">Chuck väljer</span>
+                <span className="animal-km">{canShake ? "Tryck eller skaka 📳" : "Chuck väljer"}</span>
               </span>
             </button>
             {ANIMALS.map((a) => {
@@ -296,6 +344,10 @@ export default function App() {
               coachLine={lineFor(events[active.i])}
               onContinue={resume}
             />
+          )}
+
+          {active?.kind === "swim" && (
+            <SwimNotice line={swimLine} km={active.km} onJump={resume} />
           )}
 
           {active?.kind === "pep" && peps[active.i] && (
