@@ -32,7 +32,7 @@ interface Stop { key: string; kind: "trivia" | "pep"; i: number; km: number }
 const WIZARD_CITIES = CITIES.filter((c) => c.name !== "Stockholm");
 const HERE_LABEL = "Där du är";
 /** Spellista att springa till. Sätt VITE_SPOTIFY_PLAYLIST_URL i .env.local för en egen lista. */
-const SPOTIFY_URL = import.meta.env.VITE_SPOTIFY_PLAYLIST_URL || "https://open.spotify.com/search/extinct%20animals/playlists";
+const SPOTIFY_URL = import.meta.env.VITE_SPOTIFY_PLAYLIST_URL || "https://open.spotify.com/playlist/3x1oOTAOLiGQHkC4X1Get2?si=3ce0e0eec69f402e&pt=e64f5f1b148e611130771ee122110a83";
 
 function initialPlace(): Place | null {
   const q = new URLSearchParams(location.search);
